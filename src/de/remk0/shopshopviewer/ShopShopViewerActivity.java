@@ -19,10 +19,11 @@
  */
 package de.remk0.shopshopviewer;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ListActivity;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -33,8 +34,6 @@ import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.exception.DropboxException;
 import com.dropbox.client2.exception.DropboxServerException;
-import com.dropbox.client2.session.AccessTokenPair;
-import com.dropbox.client2.session.AppKeyPair;
 
 import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
 
@@ -44,9 +43,14 @@ import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
  * 
  */
 public class ShopShopViewerActivity extends ListActivity {
-    private DropboxAPI<AndroidAuthSession> mDBApi;
+    private static final int DIALOG_DROPBOX_FAILED = 1;
+    private static final String ROOT = "/";
+    private static final int MAX_FILES = 10000;
+    private static final int REQUEST_CODE = 1;
+
     private ShopShopViewerApplication application;
     private String hash = null;
+    private DropboxAPI<AndroidAuthSession> mDBApi;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -55,72 +59,63 @@ public class ShopShopViewerActivity extends ListActivity {
         application = (ShopShopViewerApplication) getApplicationContext();
         application.setAppState(AppState.STARTED);
 
-        AndroidAuthSession session = buildSession();
-        mDBApi = new DropboxAPI<AndroidAuthSession>(session);
+        startActivityForResult(new Intent(this, DropboxAuthActivity.class),
+                REQUEST_CODE);
+    }
 
-        application.setAppState(AppState.INIT_AUTH);
-        mDBApi.getSession().startAuthentication(ShopShopViewerActivity.this);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                mDBApi = application.getDropboxAPI();
+            } else {
+                showDialog(DIALOG_DROPBOX_FAILED);
+            }
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
-        if (mDBApi.getSession().authenticationSuccessful()) {
+        if (mDBApi != null) {
+            DropboxAPI.Entry dbe = null;
+            String tempHash = hash;
             try {
-                // MANDATORY call to complete auth.
-                // Sets the access token on the session
-                mDBApi.getSession().finishAuthentication();
-
-                AccessTokenPair tokens = mDBApi.getSession()
-                        .getAccessTokenPair();
-
-                // Provide your own storeKeys to persist the access token pair
-                // A typical way to store tokens is using SharedPreferences
-                storeKeys(tokens.key, tokens.secret);
-
-                application.setAppState(AppState.INIT_DROPBOX);
-
-                DropboxAPI.Entry dbe = null;
-                String tempHash = hash;
-                try {
-                    dbe = mDBApi.metadata("/", 10000, tempHash, true, null);
-                } catch (DropboxServerException e) {
-                    switch (e.error) {
-                    case 304:
-                        if (tempHash != null) {
-                            Log.d(ShopShopViewerApplication.APP_NAME,
-                                    "Folder has not changed since last request");
-                            break;
-                        }
-                    default:
-                        Log.e(ShopShopViewerApplication.APP_NAME,
-                                "Error retrieving folders", e);
+                dbe = mDBApi.metadata(ROOT, MAX_FILES, tempHash, true, null);
+            } catch (DropboxServerException e) {
+                switch (e.error) {
+                case 304:
+                    if (tempHash != null) {
+                        Log.d(ShopShopViewerApplication.APP_NAME,
+                                "Folder has not changed since last request");
                         break;
                     }
-                } catch (DropboxException e) {
+                default:
                     Log.e(ShopShopViewerApplication.APP_NAME,
-                            "Error retrieving folder", e);
+                            "Error retrieving folders", e);
+                    break;
                 }
+            } catch (DropboxException e) {
+                Log.e(ShopShopViewerApplication.APP_NAME,
+                        "Error retrieving folder", e);
+            }
 
-                if (dbe != null) {
-                    this.hash = dbe.hash;
-                    setListAdapter(new ListOfDropBoxEntriesAdapter<Entry>(this,
-                            R.layout.list_item, dbe.contents));
-                } else {
-                    Log.d(ShopShopViewerApplication.APP_NAME,
-                            "Returned empty DropBoxEntry-Object");
-                }
-            } catch (IllegalStateException e) {
-                Log.i(ShopShopViewerApplication.APP_NAME,
-                        "Error authenticating", e);
+            if (dbe != null) {
+                this.hash = dbe.hash;
+                setListAdapter(new ListOfDropBoxEntriesAdapter<Entry>(this,
+                        R.layout.list_item, dbe.contents));
+            } else {
+                Log.d(ShopShopViewerApplication.APP_NAME,
+                        "Returned empty DropBoxEntry-Object");
             }
         }
     }
 
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
-        // TODO Auto-generated method stub
         super.onListItemClick(l, v, position, id);
 
         Entry e = (Entry) this.getListAdapter().getItem(position);
@@ -129,60 +124,28 @@ public class ShopShopViewerActivity extends ListActivity {
         startActivity(new Intent(this, DisplayFileActivity.class));
     }
 
-    private String[] getKeys() {
-        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-        String key = prefs.getString(ShopShopViewerApplication.ACCESS_KEY_NAME,
-                null);
-        String secret = prefs.getString(
-                ShopShopViewerApplication.ACCESS_SECRET_NAME, null);
-        if (key != null && secret != null) {
-            String[] ret = new String[2];
-            ret[0] = key;
-            ret[1] = secret;
-            return ret;
-        } else {
+    @Override
+    protected Dialog onCreateDialog(int id) {
+        switch (id) {
+        case DIALOG_DROPBOX_FAILED:
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage(
+                    "Connection to Dropbox failed, please check your internet connection.")
+                    .setCancelable(false)
+                    .setPositiveButton("OK",
+                            new DialogInterface.OnClickListener() {
+
+                                @Override
+                                public void onClick(DialogInterface dialog,
+                                        int which) {
+                                    ShopShopViewerActivity.this.finish();
+
+                                }
+                            });
+            return builder.create();
+        default:
             return null;
         }
     }
 
-    /**
-     * Shows keeping the access keys returned from Trusted Authenticator in a
-     * local store, rather than storing user name & password, and
-     * re-authenticating each time (which is not to be done, ever).
-     */
-    private void storeKeys(String key, String secret) {
-        // Save the access key for later
-        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-        Editor edit = prefs.edit();
-        edit.putString(ShopShopViewerApplication.ACCESS_KEY_NAME, key);
-        edit.putString(ShopShopViewerApplication.ACCESS_SECRET_NAME, secret);
-        edit.commit();
-    }
-
-    private void clearKeys() {
-        SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-        Editor edit = prefs.edit();
-        edit.clear();
-        edit.commit();
-    }
-
-    private AndroidAuthSession buildSession() {
-        AppKeyPair appKeyPair = new AppKeyPair(
-                ShopShopViewerApplication.APP_KEY,
-                ShopShopViewerApplication.APP_SECRET);
-        AndroidAuthSession session;
-
-        String[] stored = getKeys();
-        if (stored != null) {
-            AccessTokenPair accessToken = new AccessTokenPair(stored[0],
-                    stored[1]);
-            session = new AndroidAuthSession(appKeyPair,
-                    ShopShopViewerApplication.ACCESS_TYPE, accessToken);
-        } else {
-            session = new AndroidAuthSession(appKeyPair,
-                    ShopShopViewerApplication.ACCESS_TYPE);
-        }
-
-        return session;
-    }
 }

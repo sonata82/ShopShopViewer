@@ -27,6 +27,7 @@
             </intent-filter>
         </activity>
         <activity android:name="DisplayFileActivity" android:label="Display"></activity>
+        <activity android:name="DropboxAuthActivity"></activity>
     </application>
         
 </manifest>

@@ -42,7 +42,7 @@ public class ShopShopViewerApplication extends Application {
     static final String ACCESS_SECRET_NAME = "ACCESS_SECRET_NAME";
 
     public enum AppState {
-        STARTED, INIT_AUTH, INIT_DROPBOX, DISPLAY
+        STARTED, INIT_AUTH, INIT_DROPBOX, DISPLAY, AUTH_SUCCESS, SWITCH_TO_DROPBOX
     }
 
     private AppState appState;
