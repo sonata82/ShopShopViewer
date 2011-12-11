@@ -21,6 +21,9 @@ package de.remk0.shopshopviewer;
 
 import android.app.Application;
 
+import com.dropbox.client2.DropboxAPI;
+import com.dropbox.client2.DropboxAPI.Entry;
+import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.session.Session.AccessType;
 
 /**
@@ -39,10 +42,14 @@ public class ShopShopViewerApplication extends Application {
     static final String ACCESS_SECRET_NAME = "ACCESS_SECRET_NAME";
 
     public enum AppState {
-        STARTED, INIT_AUTH, INIT_DROPBOX
+        STARTED, INIT_AUTH, INIT_DROPBOX, DISPLAY
     }
 
     private AppState appState;
+
+    private Entry currentEntry;
+
+    private DropboxAPI<AndroidAuthSession> dropboxAPI;
 
     public AppState getAppState() {
         return appState;
@@ -66,6 +73,22 @@ public class ShopShopViewerApplication extends Application {
     }
 
     protected void initializeInstance() {
+    }
+
+    public void setCurrentEntry(Entry e) {
+        this.currentEntry = e;
+    }
+
+    public Entry getCurrentEntry() {
+        return this.currentEntry;
+    }
+
+    public void setDropboxAPI(DropboxAPI<AndroidAuthSession> mDBApi) {
+        this.dropboxAPI = mDBApi;
+    }
+
+    public DropboxAPI<AndroidAuthSession> getDropboxAPI() {
+        return this.dropboxAPI;
     }
 
 }

@@ -20,16 +20,19 @@
 package de.remk0.shopshopviewer;
 
 import android.app.ListActivity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.ArrayAdapter;
+import android.view.View;
+import android.widget.ListView;
 
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.exception.DropboxException;
+import com.dropbox.client2.exception.DropboxServerException;
 import com.dropbox.client2.session.AccessTokenPair;
 import com.dropbox.client2.session.AppKeyPair;
 
@@ -42,19 +45,18 @@ import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
  */
 public class ShopShopViewerActivity extends ListActivity {
     private DropboxAPI<AndroidAuthSession> mDBApi;
-    private ShopShopViewerApplication application = (ShopShopViewerApplication) getApplicationContext();
+    private ShopShopViewerApplication application;
+    private String hash = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        application = (ShopShopViewerApplication) getApplicationContext();
         application.setAppState(AppState.STARTED);
 
         AndroidAuthSession session = buildSession();
         mDBApi = new DropboxAPI<AndroidAuthSession>(session);
-
-        // setContentView(R.layout.main);
-        //
 
         application.setAppState(AppState.INIT_AUTH);
         mDBApi.getSession().startAuthentication(ShopShopViewerActivity.this);
@@ -80,22 +82,51 @@ public class ShopShopViewerActivity extends ListActivity {
                 application.setAppState(AppState.INIT_DROPBOX);
 
                 DropboxAPI.Entry dbe = null;
+                String tempHash = hash;
                 try {
-                    dbe = mDBApi.metadata("/", 10000, null, true, null);
+                    dbe = mDBApi.metadata("/", 10000, tempHash, true, null);
+                } catch (DropboxServerException e) {
+                    switch (e.error) {
+                    case 304:
+                        if (tempHash != null) {
+                            Log.d(ShopShopViewerApplication.APP_NAME,
+                                    "Folder has not changed since last request");
+                            break;
+                        }
+                    default:
+                        Log.e(ShopShopViewerApplication.APP_NAME,
+                                "Error retrieving folders", e);
+                        break;
+                    }
                 } catch (DropboxException e) {
                     Log.e(ShopShopViewerApplication.APP_NAME,
                             "Error retrieving folder", e);
                 }
 
                 if (dbe != null) {
-                    setListAdapter(new ArrayAdapter<Entry>(this,
+                    this.hash = dbe.hash;
+                    setListAdapter(new ListOfDropBoxEntriesAdapter<Entry>(this,
                             R.layout.list_item, dbe.contents));
+                } else {
+                    Log.d(ShopShopViewerApplication.APP_NAME,
+                            "Returned empty DropBoxEntry-Object");
                 }
             } catch (IllegalStateException e) {
                 Log.i(ShopShopViewerApplication.APP_NAME,
                         "Error authenticating", e);
             }
         }
+    }
+
+    @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        // TODO Auto-generated method stub
+        super.onListItemClick(l, v, position, id);
+
+        Entry e = (Entry) this.getListAdapter().getItem(position);
+        this.application.setCurrentEntry(e);
+        this.application.setDropboxAPI(mDBApi);
+        startActivity(new Intent(this, DisplayFileActivity.class));
     }
 
     private String[] getKeys() {
