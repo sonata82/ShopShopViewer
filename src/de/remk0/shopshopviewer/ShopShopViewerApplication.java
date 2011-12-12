@@ -27,7 +27,7 @@ import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.session.Session.AccessType;
 
 /**
- * 
+ * Object that holds global data of the application.
  * 
  * @author Remko Plantenga
  * 
@@ -35,35 +35,20 @@ import com.dropbox.client2.session.Session.AccessType;
 public class ShopShopViewerApplication extends Application {
     private static ShopShopViewerApplication sInstance;
 
-    final static public String APP_KEY = "iqo7fg98tfzhyb3";
-    final static public String APP_SECRET = "r6xtw5tmfqa6kzi";
-    final static public AccessType ACCESS_TYPE = AccessType.APP_FOLDER;
-    static final String ACCESS_KEY_NAME = "ACCESS_KEY_NAME";
-    static final String ACCESS_SECRET_NAME = "ACCESS_SECRET_NAME";
+    public static final String APP_KEY = "iqo7fg98tfzhyb3";
+    public static final String APP_SECRET = "r6xtw5tmfqa6kzi";
+    public static final AccessType ACCESS_TYPE = AccessType.APP_FOLDER;
+    public static final String ACCESS_KEY_NAME = "ACCESS_KEY_NAME";
+    public static final String ACCESS_SECRET_NAME = "ACCESS_SECRET_NAME";
+    public static final String APP_NAME = "ShopShopViewer";
 
     public enum AppState {
         STARTED, INIT_AUTH, INIT_DROPBOX, DISPLAY, AUTH_SUCCESS, SWITCH_TO_DROPBOX
     }
 
     private AppState appState;
-
     private Entry currentEntry;
-
     private DropboxAPI<AndroidAuthSession> dropboxAPI;
-
-    public AppState getAppState() {
-        return appState;
-    }
-
-    public void setAppState(AppState appState) {
-        this.appState = appState;
-    }
-
-    public static ShopShopViewerApplication getInstance() {
-        return sInstance;
-    }
-
-    public static final String APP_NAME = "ShopShopViewer";
 
     @Override
     public void onCreate() {
@@ -72,7 +57,19 @@ public class ShopShopViewerApplication extends Application {
         sInstance.initializeInstance();
     }
 
+    public static ShopShopViewerApplication getInstance() {
+        return sInstance;
+    }
+
     protected void initializeInstance() {
+    }
+
+    public AppState getAppState() {
+        return appState;
+    }
+
+    public void setAppState(AppState appState) {
+        this.appState = appState;
     }
 
     public void setCurrentEntry(Entry e) {

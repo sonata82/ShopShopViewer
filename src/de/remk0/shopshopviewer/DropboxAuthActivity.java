@@ -33,6 +33,9 @@ import com.dropbox.client2.session.AppKeyPair;
 import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
 
 /**
+ * This activity forces the user to logon to a Dropbox account and on success
+ * saves the session in the global application object. Most of the code here is
+ * directly from the Dropbox tutorial and/or demo.
  * 
  * @author Remko Plantenga
  * 

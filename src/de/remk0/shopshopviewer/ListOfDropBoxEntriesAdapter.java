@@ -31,6 +31,8 @@ import android.widget.TextView;
 import com.dropbox.client2.DropboxAPI.Entry;
 
 /**
+ * Custom ArrayAdapter for {@link Entry entries} of a Dropbox folder.
+ * 
  * @author Remko Plantenga
  * 
  */
