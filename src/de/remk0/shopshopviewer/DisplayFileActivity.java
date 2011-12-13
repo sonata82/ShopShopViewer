@@ -19,7 +19,7 @@
  */
 package de.remk0.shopshopviewer;
 
-import java.io.IOException;
+import java.io.File;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -29,23 +29,18 @@ import com.dd.plist.NSArray;
 import com.dd.plist.NSDictionary;
 import com.dd.plist.NSObject;
 import com.dd.plist.PropertyListParser;
-import com.dropbox.client2.DropboxAPI;
-import com.dropbox.client2.DropboxAPI.DropboxInputStream;
-import com.dropbox.client2.DropboxAPI.Entry;
-import com.dropbox.client2.android.AndroidAuthSession;
-import com.dropbox.client2.exception.DropboxException;
-import com.dropbox.client2.exception.DropboxServerException;
 
 import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
 
 /**
+ * Activity that displays a shopping list.
+ * 
  * @author Remko Plantenga
  * 
  */
 public class DisplayFileActivity extends Activity {
 
     private ShopShopViewerApplication application;
-    private DropboxAPI<AndroidAuthSession> mDBApi;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,8 +49,6 @@ public class DisplayFileActivity extends Activity {
         this.application = (ShopShopViewerApplication) getApplicationContext();
         this.application.setAppState(AppState.DISPLAY);
 
-        this.mDBApi = application.getDropboxAPI();
-
         setContentView(R.layout.main);
     }
 
@@ -63,57 +56,31 @@ public class DisplayFileActivity extends Activity {
     protected void onResume() {
         super.onResume();
 
-        Entry entry = this.application.getCurrentEntry();
-        DropboxInputStream dbis = null;
+        String fileName = this.application.getCurrentFile();
+        File f = new File(getExternalFilesDir(null), fileName);
 
         try {
-            dbis = mDBApi.getFileStream(entry.path, null);
-        } catch (DropboxServerException e) {
-            switch (e.error) {
-            default:
-                Log.e(ShopShopViewerApplication.APP_NAME,
-                        "Error retrieving file " + entry.fileName(), e);
-                break;
+            NSDictionary rootDict = (NSDictionary) PropertyListParser.parse(f);
+            NSObject[] colors = ((NSArray) rootDict.objectForKey("color"))
+                    .getArray();
+
+            for (NSObject c : colors) {
+                Log.d(ShopShopViewerApplication.APP_NAME, c.toString());
             }
-        } catch (DropboxException e) {
-            Log.e(ShopShopViewerApplication.APP_NAME, "Error retrieving file "
-                    + entry.fileName(), e);
+
+            NSObject[] shoppingList = ((NSArray) rootDict
+                    .objectForKey("shoppingList")).getArray();
+
+            for (NSObject item : shoppingList) {
+                NSDictionary i = (NSDictionary) item;
+                NSObject done = i.objectForKey("done");
+                Log.d(ShopShopViewerApplication.APP_NAME, done.toString());
+
+            }
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
 
-        if (dbis != null) {
-            try {
-                NSDictionary rootDict = (NSDictionary) PropertyListParser
-                        .parse(dbis);
-                NSObject[] colors = ((NSArray) rootDict.objectForKey("color"))
-                        .getArray();
-
-                for (NSObject c : colors) {
-                    Log.d(ShopShopViewerApplication.APP_NAME, c.toString());
-                }
-
-                NSObject[] shoppingList = ((NSArray) rootDict
-                        .objectForKey("shoppingList")).getArray();
-
-                for (NSObject item : shoppingList) {
-                    NSDictionary i = (NSDictionary) item;
-                    NSObject done = i.objectForKey("done");
-                    Log.d(ShopShopViewerApplication.APP_NAME, done.toString());
-
-                }
-            } catch (Exception e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } finally {
-                try {
-                    dbis.close();
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-        } else {
-            Log.d(ShopShopViewerApplication.APP_NAME,
-                    "Returned empty DropBoxInputStream-Object");
-        }
     }
 }

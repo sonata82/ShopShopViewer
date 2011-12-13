@@ -42,6 +42,9 @@ import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
  */
 public class DropboxAuthActivity extends Activity {
 
+    private final String APP_KEY = "iqo7fg98tfzhyb3";
+    private final String APP_SECRET = getString(R.string.app_secret);
+
     private ShopShopViewerApplication application;
     private DropboxAPI<AndroidAuthSession> mDBApi;
 
@@ -137,9 +140,7 @@ public class DropboxAuthActivity extends Activity {
     }
 
     private AndroidAuthSession buildSession() {
-        AppKeyPair appKeyPair = new AppKeyPair(
-                ShopShopViewerApplication.APP_KEY,
-                ShopShopViewerApplication.APP_SECRET);
+        AppKeyPair appKeyPair = new AppKeyPair(this.APP_KEY, this.APP_SECRET);
         AndroidAuthSession session;
 
         String[] stored = getKeys();
