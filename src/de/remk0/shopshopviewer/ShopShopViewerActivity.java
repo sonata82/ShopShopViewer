@@ -146,7 +146,7 @@ public class ShopShopViewerActivity extends ListActivity {
                 }
             default:
                 Log.e(ShopShopViewerApplication.APP_NAME,
-                        "Error retrieving folders", e);
+                        "Error retrieving folder", e);
                 break;
             }
         } catch (DropboxException e) {

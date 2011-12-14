@@ -41,8 +41,6 @@ public class ShopShopViewerApplication extends Application {
     private static final String SHOPSHOP_EXTENSION = ".shopshop";
 
     public static final AccessType ACCESS_TYPE = AccessType.DROPBOX;
-    public static final String ACCESS_KEY_NAME = "ACCESS_KEY_NAME";
-    public static final String ACCESS_SECRET_NAME = "ACCESS_SECRET_NAME";
     public static final String APP_NAME = "ShopShopViewer";
     public static final String DROPBOX_FOLDER = "/ShopShop";
 

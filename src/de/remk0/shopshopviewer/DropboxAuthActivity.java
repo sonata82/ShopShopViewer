@@ -42,7 +42,10 @@ import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
  */
 public class DropboxAuthActivity extends Activity {
 
-    private final String APP_KEY = "iqo7fg98tfzhyb3";
+    public static final String ACCESS_KEY_NAME = "ACCESS_KEY_NAME";
+    public static final String ACCESS_SECRET_NAME = "ACCESS_SECRET_NAME";
+    
+    private final String APP_KEY = getString(R.string.app_key);
     private final String APP_SECRET = getString(R.string.app_secret);
 
     private ShopShopViewerApplication application;
@@ -85,7 +88,7 @@ public class DropboxAuthActivity extends Activity {
                 setResult(RESULT_OK);
                 finish();
             } catch (IllegalStateException e) {
-                Log.i(ShopShopViewerApplication.APP_NAME,
+                Log.e(ShopShopViewerApplication.APP_NAME,
                         "Error authenticating", e);
                 setResult(RESULT_CANCELED);
                 finish();
@@ -95,7 +98,7 @@ public class DropboxAuthActivity extends Activity {
                 application.setAppState(AppState.SWITCH_TO_DROPBOX);
             } else {
                 Log.e(ShopShopViewerApplication.APP_NAME,
-                        "Failed connection to Dropbox");
+                        "Failed connecting to Dropbox");
                 setResult(RESULT_CANCELED);
                 finish();
             }
@@ -104,10 +107,10 @@ public class DropboxAuthActivity extends Activity {
 
     private String[] getKeys() {
         SharedPreferences prefs = getPreferences(MODE_PRIVATE);
-        String key = prefs.getString(ShopShopViewerApplication.ACCESS_KEY_NAME,
+        String key = prefs.getString(DropboxAuthActivity.ACCESS_KEY_NAME,
                 null);
         String secret = prefs.getString(
-                ShopShopViewerApplication.ACCESS_SECRET_NAME, null);
+                DropboxAuthActivity.ACCESS_SECRET_NAME, null);
         if (key != null && secret != null) {
             String[] ret = new String[2];
             ret[0] = key;
@@ -127,8 +130,8 @@ public class DropboxAuthActivity extends Activity {
         // Save the access key for later
         SharedPreferences prefs = getPreferences(MODE_PRIVATE);
         Editor edit = prefs.edit();
-        edit.putString(ShopShopViewerApplication.ACCESS_KEY_NAME, key);
-        edit.putString(ShopShopViewerApplication.ACCESS_SECRET_NAME, secret);
+        edit.putString(DropboxAuthActivity.ACCESS_KEY_NAME, key);
+        edit.putString(DropboxAuthActivity.ACCESS_SECRET_NAME, secret);
         edit.commit();
     }
 
