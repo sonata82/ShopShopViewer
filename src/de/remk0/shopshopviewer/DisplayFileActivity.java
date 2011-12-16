@@ -20,14 +20,21 @@
 package de.remk0.shopshopviewer;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
-import android.app.Activity;
+import android.app.ListActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ListAdapter;
+import android.widget.SimpleAdapter;
 
 import com.dd.plist.NSArray;
 import com.dd.plist.NSDictionary;
+import com.dd.plist.NSNumber;
 import com.dd.plist.NSObject;
+import com.dd.plist.NSString;
 import com.dd.plist.PropertyListParser;
 
 import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
@@ -38,9 +45,10 @@ import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
  * @author Remko Plantenga
  * 
  */
-public class DisplayFileActivity extends Activity {
+public class DisplayFileActivity extends ListActivity {
 
     private ShopShopViewerApplication application;
+    private List<HashMap<String, String>> rows;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,8 +56,6 @@ public class DisplayFileActivity extends Activity {
 
         this.application = (ShopShopViewerApplication) getApplicationContext();
         this.application.setAppState(AppState.DISPLAY);
-
-        setContentView(R.layout.main);
     }
 
     @Override
@@ -71,12 +77,28 @@ public class DisplayFileActivity extends Activity {
             NSObject[] shoppingList = ((NSArray) rootDict
                     .objectForKey("shoppingList")).getArray();
 
+            rows = new ArrayList<HashMap<String, String>>();
+
             for (NSObject item : shoppingList) {
                 NSDictionary i = (NSDictionary) item;
-                NSObject done = i.objectForKey("done");
-                Log.d(ShopShopViewerApplication.APP_NAME, done.toString());
+                NSString name = (NSString) i.objectForKey("name");
+                NSNumber done = (NSNumber) i.objectForKey("done");
+                NSString count = (NSString) i.objectForKey("count");
 
+                HashMap<String, String> row = new HashMap<String, String>();
+                row.put("name", name.toString());
+                row.put("done", done.toString());
+                row.put("count", count.toString());
+
+                rows.add(row);
             }
+
+            ListAdapter adapter = new SimpleAdapter(this, rows,
+                    R.layout.file_row,
+                    new String[] { "name", "count", "done" }, new int[] {
+                            R.id.name, R.id.count, R.id.done });
+            this.setListAdapter(adapter);
+
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

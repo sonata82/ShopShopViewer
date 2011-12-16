@@ -19,15 +19,11 @@
  */
 package de.remk0.shopshopviewer;
 
-import java.io.File;
-import java.io.FilenameFilter;
-
 import android.app.Application;
 import android.os.Environment;
 
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
-import com.dropbox.client2.session.Session.AccessType;
 
 /**
  * Object that holds global data and state of the application.
@@ -38,11 +34,8 @@ import com.dropbox.client2.session.Session.AccessType;
 public class ShopShopViewerApplication extends Application {
 
     private static ShopShopViewerApplication sInstance;
-    private static final String SHOPSHOP_EXTENSION = ".shopshop";
 
-    public static final AccessType ACCESS_TYPE = AccessType.DROPBOX;
     public static final String APP_NAME = "ShopShopViewer";
-    public static final String DROPBOX_FOLDER = "/ShopShop";
 
     public enum AppState {
         STARTED, INIT_AUTH, INIT_DROPBOX, DISPLAY, AUTH_SUCCESS, SWITCH_TO_DROPBOX, SYNCHRONIZE, WAITING
@@ -118,20 +111,6 @@ public class ShopShopViewerApplication extends Application {
             // to know is we can neither read nor write
             externalStorageAvailable = externalStorageWriteable = false;
         }
-    }
-
-    public String[] getFiles() {
-        File appFolder = getExternalFilesDir(null);
-        return appFolder.list(new FilenameFilter() {
-
-            @Override
-            public boolean accept(File dir, String filename) {
-                if (filename.endsWith(SHOPSHOP_EXTENSION)) {
-                    return true;
-                }
-                return false;
-            }
-        });
     }
 
 }

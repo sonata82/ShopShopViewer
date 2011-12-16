@@ -23,13 +23,17 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
+import java.util.Map;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -59,11 +63,15 @@ public class ShopShopViewerActivity extends ListActivity {
     private static final int DIALOG_STORAGE_ERROR = 2;
     private static final int MAX_FILES = 10000;
     private static final int REQUEST_CODE = 1;
+    private static final String REVISIONS_STORE = "REV_STORE";
+    private static final String SHOPSHOP_EXTENSION = ".shopshop";
+    private static final String DROPBOX_FOLDER = "/ShopShop";
 
     private ShopShopViewerApplication application;
-    private String hash = null;
     private DropboxAPI<AndroidAuthSession> mDBApi;
-    private String[] files;
+    private Map<String, ?> revisionsStore;
+    private String hash = null;
+    private ArrayAdapter<String> listAdapter;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -75,11 +83,25 @@ public class ShopShopViewerActivity extends ListActivity {
         if (!application.isExternalStorageAvailable()) {
             showDialog(DIALOG_STORAGE_ERROR);
         } else {
-            files = application.getFiles();
-
-            setListAdapter(new ArrayAdapter<String>(this, R.layout.list_item,
-                    files));
+            getFiles();
         }
+    }
+
+    private void getFiles() {
+        File appFolder = getExternalFilesDir(null);
+        String[] files = appFolder.list(new FilenameFilter() {
+
+            @Override
+            public boolean accept(File dir, String filename) {
+                if (filename.endsWith(SHOPSHOP_EXTENSION)) {
+                    return true;
+                }
+                return false;
+            }
+        });
+
+        listAdapter = new ArrayAdapter<String>(this, R.layout.filelist, files);
+        setListAdapter(listAdapter);
     }
 
     @Override
@@ -112,6 +134,7 @@ public class ShopShopViewerActivity extends ListActivity {
         if (requestCode == REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 mDBApi = application.getDropboxAPI();
+                retrieveRevisions();
             } else {
                 showDialog(DIALOG_DROPBOX_FAILED);
             }
@@ -134,8 +157,8 @@ public class ShopShopViewerActivity extends ListActivity {
         DropboxAPI.Entry dbe = null;
         String tempHash = this.hash;
         try {
-            dbe = mDBApi.metadata(ShopShopViewerApplication.DROPBOX_FOLDER, MAX_FILES,
-                    tempHash, true, null);
+            dbe = mDBApi.metadata(DROPBOX_FOLDER, MAX_FILES, tempHash, true,
+                    null);
         } catch (DropboxServerException e) {
             switch (e.error) {
             case 304:
@@ -157,33 +180,46 @@ public class ShopShopViewerActivity extends ListActivity {
         if (dbe != null) {
             this.hash = dbe.hash;
             for (Entry e : dbe.contents) {
-                BufferedOutputStream buf = null;
-                try {
-                    buf = new BufferedOutputStream(new FileOutputStream(
-                            new File(getExternalFilesDir(null), e.fileName())));
+                if (getRevision(e.path) != e.rev) {
 
+                    BufferedOutputStream buf = null;
                     try {
-                        mDBApi.getFile(e.path, null, buf, null);
-                    } catch (DropboxException e1) {
+                        buf = new BufferedOutputStream(new FileOutputStream(
+                                new File(getExternalFilesDir(null),
+                                        e.fileName())));
+
+                        try {
+                            mDBApi.getFile(e.path, null, buf, null);
+                        } catch (DropboxException e1) {
+                            Log.e(ShopShopViewerApplication.APP_NAME,
+                                    "Error while downloading " + e.fileName(),
+                                    e1);
+                        }
+                    } catch (FileNotFoundException e2) {
                         Log.e(ShopShopViewerApplication.APP_NAME,
-                                "Error while downloading " + e.fileName(), e1);
-                    }
-                } catch (FileNotFoundException e2) {
-                    Log.e(ShopShopViewerApplication.APP_NAME,
-                            "Error while opening file " + e.fileName(), e2);
-                } finally {
-                    try {
-                        buf.close();
-                    } catch (IOException e1) {
-                        Log.e(ShopShopViewerApplication.APP_NAME,
-                                "Error while closing file " + e.fileName(), e1);
+                                "Error while opening file " + e.fileName(), e2);
+                    } finally {
+                        try {
+                            buf.close();
+
+                            storeRevision(e.path, e.rev);
+                        } catch (IOException e1) {
+                            Log.e(ShopShopViewerApplication.APP_NAME,
+                                    "Error while closing file " + e.fileName(),
+                                    e1);
+                        }
                     }
                 }
             }
+            getFiles();
         } else {
             Log.d(ShopShopViewerApplication.APP_NAME,
                     "Returned empty DropBoxEntry-Object");
         }
+    }
+
+    private String getRevision(String filename) {
+        return (String) revisionsStore.get(filename);
     }
 
     @Override
@@ -229,6 +265,19 @@ public class ShopShopViewerActivity extends ListActivity {
         default:
             return null;
         }
+    }
+
+    private void storeRevision(String filename, String rev) {
+        SharedPreferences prefs = getSharedPreferences(REVISIONS_STORE,
+                MODE_PRIVATE);
+        Editor edit = prefs.edit();
+        edit.putString(filename, rev).commit();
+    }
+
+    private void retrieveRevisions() {
+        SharedPreferences prefs = getSharedPreferences(REVISIONS_STORE,
+                MODE_PRIVATE);
+        this.revisionsStore = prefs.getAll();
     }
 
 }
