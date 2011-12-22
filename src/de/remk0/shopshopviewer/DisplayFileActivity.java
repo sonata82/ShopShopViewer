@@ -24,11 +24,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ListActivity;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
-import android.widget.ListAdapter;
+import android.view.View;
+import android.widget.CheckBox;
+import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.SimpleAdapter.ViewBinder;
 
 import com.dd.plist.NSArray;
 import com.dd.plist.NSDictionary;
@@ -47,8 +53,9 @@ import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
  */
 public class DisplayFileActivity extends ListActivity {
 
+    private static final int DIALOG_READ_ERROR = 0;
     private ShopShopViewerApplication application;
-    private List<HashMap<String, String>> rows;
+    private List<HashMap<String, Object>> rows;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,7 +84,7 @@ public class DisplayFileActivity extends ListActivity {
             NSObject[] shoppingList = ((NSArray) rootDict
                     .objectForKey("shoppingList")).getArray();
 
-            rows = new ArrayList<HashMap<String, String>>();
+            rows = new ArrayList<HashMap<String, Object>>();
 
             for (NSObject item : shoppingList) {
                 NSDictionary i = (NSDictionary) item;
@@ -85,24 +92,80 @@ public class DisplayFileActivity extends ListActivity {
                 NSNumber done = (NSNumber) i.objectForKey("done");
                 NSString count = (NSString) i.objectForKey("count");
 
-                HashMap<String, String> row = new HashMap<String, String>();
+                HashMap<String, Object> row = new HashMap<String, Object>();
                 row.put("name", name.toString());
-                row.put("done", done.toString());
+                row.put("done", done.intValue());
                 row.put("count", count.toString());
 
                 rows.add(row);
             }
 
-            ListAdapter adapter = new SimpleAdapter(this, rows,
-                    R.layout.file_row,
-                    new String[] { "name", "count", "done" }, new int[] {
-                            R.id.name, R.id.count, R.id.done });
+            CheckableSimpleAdapter adapter = new CheckableSimpleAdapter(this,
+                    rows, R.layout.file_row, new String[] { "done", "name",
+                            "count" }, new int[] { R.id.done, R.id.name,
+                            R.id.count });
+            adapter.setViewBinder(new ShopShopListBinder());
             this.setListAdapter(adapter);
 
         } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            showDialog(DIALOG_READ_ERROR);
         }
 
+    }
+
+    class ShopShopListBinder implements ViewBinder {
+
+        @Override
+        public boolean setViewValue(View view, final Object data,
+                String textRepresentation) {
+            if (view instanceof CheckBox) {
+                CheckBox cb = (CheckBox) view;
+                if ("1".equals(textRepresentation)) {
+                    cb.setChecked(true);
+                } else {
+                    cb.setChecked(false);
+                }
+                return true;
+            }
+            return false;
+        }
+
+    }
+
+    @Override
+    protected void onListItemClick(ListView l, View v, int position, long id) {
+        super.onListItemClick(l, v, position, id);
+
+        HashMap<String, Object> map = (HashMap) this.getListView()
+                .getItemAtPosition(position);
+        if ((Integer) map.get("done") == 0) {
+            map.put("done", 1);
+        } else {
+            map.put("done", 0);
+        }
+        SimpleAdapter adapter = (SimpleAdapter) l.getAdapter();
+        adapter.notifyDataSetChanged();
+    }
+
+    @Override
+    protected Dialog onCreateDialog(int id) {
+        switch (id) {
+        case DIALOG_READ_ERROR:
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setMessage("Error while reading")
+                    .setCancelable(false)
+                    .setPositiveButton("OK",
+                            new DialogInterface.OnClickListener() {
+
+                                @Override
+                                public void onClick(DialogInterface dialog,
+                                        int which) {
+
+                                }
+                            });
+            return builder.create();
+        default:
+            return null;
+        }
     }
 }

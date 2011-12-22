@@ -30,10 +30,12 @@ import java.util.Map;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -61,6 +63,7 @@ import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
 public class ShopShopViewerActivity extends ListActivity {
     private static final int DIALOG_DROPBOX_FAILED = 1;
     private static final int DIALOG_STORAGE_ERROR = 2;
+    private static final int DIALOG_PROGRESS_SYNC = 3;
     private static final int MAX_FILES = 10000;
     private static final int REQUEST_CODE = 1;
     private static final String REVISIONS_STORE = "REV_STORE";
@@ -70,8 +73,8 @@ public class ShopShopViewerActivity extends ListActivity {
     private ShopShopViewerApplication application;
     private DropboxAPI<AndroidAuthSession> mDBApi;
     private Map<String, ?> revisionsStore;
-    private String hash = null;
     private ArrayAdapter<String> listAdapter;
+    private ProgressDialog progressDialog;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -147,75 +150,107 @@ public class ShopShopViewerActivity extends ListActivity {
 
         if (mDBApi != null
                 && application.getAppState() == AppState.AUTH_SUCCESS) {
-            dropboxSynchronize();
+            showDialog(DIALOG_PROGRESS_SYNC);
+            new DropboxSynchronizeTask().execute();
         }
 
         application.setAppState(AppState.WAITING);
     }
 
-    private void dropboxSynchronize() {
-        DropboxAPI.Entry dbe = null;
-        String tempHash = this.hash;
-        try {
-            dbe = mDBApi.metadata(DROPBOX_FOLDER, MAX_FILES, tempHash, true,
-                    null);
-        } catch (DropboxServerException e) {
-            switch (e.error) {
-            case 304:
-                if (tempHash != null) {
-                    Log.i(ShopShopViewerApplication.APP_NAME,
-                            "Folder has not changed since last request");
+    private class DropboxSynchronizeTask extends
+            AsyncTask<Void, Integer, Boolean> {
+
+        private String hash = null;
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            DropboxAPI.Entry dbe = null;
+            String tempHash = this.hash;
+            try {
+                dbe = mDBApi.metadata(DROPBOX_FOLDER, MAX_FILES, tempHash,
+                        true, null);
+            } catch (DropboxServerException e) {
+                switch (e.error) {
+                case 304:
+                    if (tempHash != null) {
+                        Log.i(ShopShopViewerApplication.APP_NAME,
+                                "Folder has not changed since last request");
+                        break;
+                    }
+                default:
+                    Log.e(ShopShopViewerApplication.APP_NAME,
+                            "Error retrieving folder", e);
                     break;
                 }
-            default:
+            } catch (DropboxException e) {
                 Log.e(ShopShopViewerApplication.APP_NAME,
                         "Error retrieving folder", e);
-                break;
             }
-        } catch (DropboxException e) {
-            Log.e(ShopShopViewerApplication.APP_NAME,
-                    "Error retrieving folder", e);
-        }
 
-        if (dbe != null) {
-            this.hash = dbe.hash;
-            for (Entry e : dbe.contents) {
-                if (getRevision(e.path) != e.rev) {
-
-                    BufferedOutputStream buf = null;
-                    try {
-                        buf = new BufferedOutputStream(new FileOutputStream(
-                                new File(getExternalFilesDir(null),
-                                        e.fileName())));
-
+            if (dbe != null) {
+                this.hash = dbe.hash;
+                int i = 0;
+                for (Entry e : dbe.contents) {
+                    if (getRevision(e.path) != e.rev) {
+                        BufferedOutputStream buf = null;
                         try {
-                            mDBApi.getFile(e.path, null, buf, null);
-                        } catch (DropboxException e1) {
-                            Log.e(ShopShopViewerApplication.APP_NAME,
-                                    "Error while downloading " + e.fileName(),
-                                    e1);
-                        }
-                    } catch (FileNotFoundException e2) {
-                        Log.e(ShopShopViewerApplication.APP_NAME,
-                                "Error while opening file " + e.fileName(), e2);
-                    } finally {
-                        try {
-                            buf.close();
+                            buf = new BufferedOutputStream(
+                                    new FileOutputStream(new File(
+                                            getExternalFilesDir(null),
+                                            e.fileName())));
 
-                            storeRevision(e.path, e.rev);
-                        } catch (IOException e1) {
+                            try {
+                                mDBApi.getFile(e.path, null, buf, null);
+                            } catch (DropboxException e1) {
+                                Log.e(ShopShopViewerApplication.APP_NAME,
+                                        "Error while downloading "
+                                                + e.fileName(), e1);
+                            }
+                        } catch (FileNotFoundException e2) {
                             Log.e(ShopShopViewerApplication.APP_NAME,
-                                    "Error while closing file " + e.fileName(),
-                                    e1);
+                                    "Error while opening file " + e.fileName(),
+                                    e2);
+                        } finally {
+                            try {
+                                buf.close();
+
+                                storeRevision(e.path, e.rev);
+
+                                publishProgress(++i, dbe.contents.size());
+                            } catch (IOException e1) {
+                                Log.e(ShopShopViewerApplication.APP_NAME,
+                                        "Error while closing file "
+                                                + e.fileName(), e1);
+                            }
                         }
                     }
                 }
+                return true;
+            } else {
+                Log.d(ShopShopViewerApplication.APP_NAME,
+                        "Returned empty DropBoxEntry-Object");
             }
-            getFiles();
-        } else {
-            Log.d(ShopShopViewerApplication.APP_NAME,
-                    "Returned empty DropBoxEntry-Object");
+
+            return false;
         }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            float count = values[0];
+            float total = values[1];
+            Log.d(ShopShopViewerApplication.APP_NAME, "Progress updated to "
+                    + count + " " + total + " " + +(count / total * 100f));
+            progressDialog.setProgress((int) (count / total * 100));
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+            dismissDialog(DIALOG_PROGRESS_SYNC);
+            if (result) {
+                getFiles();
+            }
+        }
+
     }
 
     private String getRevision(String filename) {
@@ -262,8 +297,21 @@ public class ShopShopViewerActivity extends ListActivity {
                                 }
                             });
             return builder.create();
+        case DIALOG_PROGRESS_SYNC:
+            progressDialog = new ProgressDialog(ShopShopViewerActivity.this);
+            progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            progressDialog.setMessage("Synchronizing...");
+            return progressDialog;
         default:
             return null;
+        }
+    }
+
+    @Override
+    protected void onPrepareDialog(int id, Dialog dialog) {
+        switch (id) {
+        case DIALOG_PROGRESS_SYNC:
+            progressDialog.setProgress(0);
         }
     }
 
