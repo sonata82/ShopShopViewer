@@ -70,7 +70,9 @@ public class DisplayFileActivity extends ListActivity {
         super.onResume();
 
         String fileName = this.application.getCurrentFile();
-        File f = new File(getExternalFilesDir(null), fileName);
+        this.setTitle(fileName);
+        File f = new File(getExternalFilesDir(null),
+                fileName.concat(ShopShopViewerApplication.SHOPSHOP_EXTENSION));
 
         try {
             NSDictionary rootDict = (NSDictionary) PropertyListParser.parse(f);
@@ -160,7 +162,7 @@ public class DisplayFileActivity extends ListActivity {
                                 @Override
                                 public void onClick(DialogInterface dialog,
                                         int which) {
-
+                                    finish();
                                 }
                             });
             return builder.create();

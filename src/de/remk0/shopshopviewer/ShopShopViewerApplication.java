@@ -48,6 +48,8 @@ public class ShopShopViewerApplication extends Application {
     private boolean externalStorageAvailable;
     private boolean externalStorageWriteable;
 
+    static final String SHOPSHOP_EXTENSION = ".shopshop";
+
     @Override
     public void onCreate() {
         super.onCreate();

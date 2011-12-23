@@ -67,7 +67,6 @@ public class ShopShopViewerActivity extends ListActivity {
     private static final int MAX_FILES = 10000;
     private static final int REQUEST_CODE = 1;
     private static final String REVISIONS_STORE = "REV_STORE";
-    private static final String SHOPSHOP_EXTENSION = ".shopshop";
     private static final String DROPBOX_FOLDER = "/ShopShop";
 
     private ShopShopViewerApplication application;
@@ -96,14 +95,19 @@ public class ShopShopViewerActivity extends ListActivity {
 
             @Override
             public boolean accept(File dir, String filename) {
-                if (filename.endsWith(SHOPSHOP_EXTENSION)) {
+                if (filename.endsWith(ShopShopViewerApplication.SHOPSHOP_EXTENSION)) {
                     return true;
                 }
                 return false;
             }
         });
 
-        listAdapter = new ArrayAdapter<String>(this, R.layout.filelist, files);
+        listAdapter = new ArrayAdapter<String>(this, R.layout.filelist, files) {
+            @Override
+            public String getItem(int position) {
+                return super.getItem(position).split("\\.")[0];
+            }
+        };
         setListAdapter(listAdapter);
     }
 
@@ -157,6 +161,12 @@ public class ShopShopViewerActivity extends ListActivity {
         application.setAppState(AppState.WAITING);
     }
 
+    /**
+     * Task that synchronizes with Dropbox.
+     * 
+     * @author Remko Plantenga
+     * 
+     */
     private class DropboxSynchronizeTask extends
             AsyncTask<Void, Integer, Boolean> {
 
@@ -293,7 +303,7 @@ public class ShopShopViewerActivity extends ListActivity {
                                 @Override
                                 public void onClick(DialogInterface dialog,
                                         int which) {
-
+                                    finish();
                                 }
                             });
             return builder.create();

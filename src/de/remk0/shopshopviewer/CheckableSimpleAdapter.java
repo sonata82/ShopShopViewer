@@ -47,6 +47,12 @@ public class CheckableSimpleAdapter extends SimpleAdapter {
         super(context, objects, resource, from, to);
     }
 
+    /**
+     * Helper class to store a reference to the current checkbox and listview.
+     * 
+     * @author Remko Plantenga
+     * 
+     */
     static class ViewHolder {
         protected CheckBox checkbox;
         protected ListView listView;
