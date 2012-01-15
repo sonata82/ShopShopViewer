@@ -19,13 +19,8 @@
  */
 package de.remk0.shopshopviewer;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FilenameFilter;
-import java.io.IOException;
-import java.util.Map;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -34,8 +29,6 @@ import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -46,12 +39,10 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import com.dropbox.client2.DropboxAPI;
-import com.dropbox.client2.DropboxAPI.Entry;
 import com.dropbox.client2.android.AndroidAuthSession;
-import com.dropbox.client2.exception.DropboxException;
-import com.dropbox.client2.exception.DropboxServerException;
 
 import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
+import de.remk0.shopshopviewer.task.DropboxSynchronizeTask;
 
 /**
  * The main activity that shows a list of files and allows the user to
@@ -64,16 +55,14 @@ public class ShopShopViewerActivity extends ListActivity {
     private static final int DIALOG_DROPBOX_FAILED = 1;
     private static final int DIALOG_STORAGE_ERROR = 2;
     private static final int DIALOG_PROGRESS_SYNC = 3;
-    private static final int MAX_FILES = 10000;
     private static final int REQUEST_CODE = 1;
     private static final String REVISIONS_STORE = "REV_STORE";
-    private static final String DROPBOX_FOLDER = "/ShopShop";
 
     private ShopShopViewerApplication application;
     private DropboxAPI<AndroidAuthSession> mDBApi;
-    private Map<String, ?> revisionsStore;
     private ArrayAdapter<String> listAdapter;
     private ProgressDialog progressDialog;
+    private String hash = null;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -95,7 +84,8 @@ public class ShopShopViewerActivity extends ListActivity {
 
             @Override
             public boolean accept(File dir, String filename) {
-                if (filename.endsWith(ShopShopViewerApplication.SHOPSHOP_EXTENSION)) {
+                if (filename
+                        .endsWith(ShopShopViewerApplication.SHOPSHOP_EXTENSION)) {
                     return true;
                 }
                 return false;
@@ -141,7 +131,6 @@ public class ShopShopViewerActivity extends ListActivity {
         if (requestCode == REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
                 mDBApi = application.getDropboxAPI();
-                retrieveRevisions();
             } else {
                 showDialog(DIALOG_DROPBOX_FAILED);
             }
@@ -155,93 +144,23 @@ public class ShopShopViewerActivity extends ListActivity {
         if (mDBApi != null
                 && application.getAppState() == AppState.AUTH_SUCCESS) {
             showDialog(DIALOG_PROGRESS_SYNC);
-            new DropboxSynchronizeTask().execute();
+            new MyDropboxSynchronizeTask().execute();
         }
 
         application.setAppState(AppState.WAITING);
     }
 
-    /**
-     * Task that synchronizes with Dropbox.
-     * 
-     * @author Remko Plantenga
-     * 
-     */
-    private class DropboxSynchronizeTask extends
-            AsyncTask<Void, Integer, Boolean> {
-
-        private String hash = null;
+    private class MyDropboxSynchronizeTask extends DropboxSynchronizeTask {
 
         @Override
-        protected Boolean doInBackground(Void... params) {
-            DropboxAPI.Entry dbe = null;
-            String tempHash = this.hash;
-            try {
-                dbe = mDBApi.metadata(DROPBOX_FOLDER, MAX_FILES, tempHash,
-                        true, null);
-            } catch (DropboxServerException e) {
-                switch (e.error) {
-                case 304:
-                    if (tempHash != null) {
-                        Log.i(ShopShopViewerApplication.APP_NAME,
-                                "Folder has not changed since last request");
-                        break;
-                    }
-                default:
-                    Log.e(ShopShopViewerApplication.APP_NAME,
-                            "Error retrieving folder", e);
-                    break;
-                }
-            } catch (DropboxException e) {
-                Log.e(ShopShopViewerApplication.APP_NAME,
-                        "Error retrieving folder", e);
-            }
-
-            if (dbe != null) {
-                this.hash = dbe.hash;
-                int i = 0;
-                for (Entry e : dbe.contents) {
-                    if (getRevision(e.path) != e.rev) {
-                        BufferedOutputStream buf = null;
-                        try {
-                            buf = new BufferedOutputStream(
-                                    new FileOutputStream(new File(
-                                            getExternalFilesDir(null),
-                                            e.fileName())));
-
-                            try {
-                                mDBApi.getFile(e.path, null, buf, null);
-                            } catch (DropboxException e1) {
-                                Log.e(ShopShopViewerApplication.APP_NAME,
-                                        "Error while downloading "
-                                                + e.fileName(), e1);
-                            }
-                        } catch (FileNotFoundException e2) {
-                            Log.e(ShopShopViewerApplication.APP_NAME,
-                                    "Error while opening file " + e.fileName(),
-                                    e2);
-                        } finally {
-                            try {
-                                buf.close();
-
-                                storeRevision(e.path, e.rev);
-
-                                publishProgress(++i, dbe.contents.size());
-                            } catch (IOException e1) {
-                                Log.e(ShopShopViewerApplication.APP_NAME,
-                                        "Error while closing file "
-                                                + e.fileName(), e1);
-                            }
-                        }
-                    }
-                }
-                return true;
-            } else {
-                Log.d(ShopShopViewerApplication.APP_NAME,
-                        "Returned empty DropBoxEntry-Object");
-            }
-
-            return false;
+        protected void onPreExecute() {
+            setmDBApi(mDBApi);
+            SharedPreferences prefs = getSharedPreferences(REVISIONS_STORE,
+                    MODE_PRIVATE);
+            setRevisionsStore(prefs.getAll());
+            setRevisionsEditor(prefs.edit());
+            setExternalFilesDir(getExternalFilesDir(null));
+            setHash(hash);
         }
 
         @Override
@@ -257,14 +176,11 @@ public class ShopShopViewerActivity extends ListActivity {
         protected void onPostExecute(Boolean result) {
             dismissDialog(DIALOG_PROGRESS_SYNC);
             if (result) {
+                hash = getHash();
                 getFiles();
             }
         }
 
-    }
-
-    private String getRevision(String filename) {
-        return (String) revisionsStore.get(filename);
     }
 
     @Override
@@ -323,19 +239,6 @@ public class ShopShopViewerActivity extends ListActivity {
         case DIALOG_PROGRESS_SYNC:
             progressDialog.setProgress(0);
         }
-    }
-
-    private void storeRevision(String filename, String rev) {
-        SharedPreferences prefs = getSharedPreferences(REVISIONS_STORE,
-                MODE_PRIVATE);
-        Editor edit = prefs.edit();
-        edit.putString(filename, rev).commit();
-    }
-
-    private void retrieveRevisions() {
-        SharedPreferences prefs = getSharedPreferences(REVISIONS_STORE,
-                MODE_PRIVATE);
-        this.revisionsStore = prefs.getAll();
     }
 
 }
