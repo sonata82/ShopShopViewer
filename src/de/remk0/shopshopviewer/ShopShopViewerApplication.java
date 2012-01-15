@@ -36,6 +36,7 @@ public class ShopShopViewerApplication extends Application {
     private static ShopShopViewerApplication sInstance;
 
     public static final String APP_NAME = "ShopShopViewer";
+    public static final String SHOPSHOP_EXTENSION = ".shopshop";
 
     public enum AppState {
         STARTED, INIT_AUTH, INIT_DROPBOX, DISPLAY, AUTH_SUCCESS, SWITCH_TO_DROPBOX, SYNCHRONIZE, WAITING
@@ -47,8 +48,6 @@ public class ShopShopViewerApplication extends Application {
 
     private boolean externalStorageAvailable;
     private boolean externalStorageWriteable;
-
-    static final String SHOPSHOP_EXTENSION = ".shopshop";
 
     @Override
     public void onCreate() {

@@ -48,7 +48,6 @@ public class DisplayFileActivity extends ListActivity {
     private static final int DIALOG_PROGRESS_READ = 1;
     private ShopShopViewerApplication application;
     private ProgressDialog progressDialog;
-    private HashMap<String, List<HashMap<String, Object>>> data = new HashMap<String, List<HashMap<String, Object>>>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,15 +64,9 @@ public class DisplayFileActivity extends ListActivity {
         String fileName = this.application.getCurrentFile();
         this.setTitle(fileName);
 
-        if (data.containsKey(fileName)) {
-
-        } else {
-            showDialog(DIALOG_PROGRESS_READ);
-            new MyReadShopShopFile()
-                    .execute(new Object[] {
-                            getExternalFilesDir(null),
-                            fileName.concat(ShopShopViewerApplication.SHOPSHOP_EXTENSION) });
-        }
+        showDialog(DIALOG_PROGRESS_READ);
+        new MyReadShopShopFile().execute(new Object[] {
+                getExternalFilesDir(null), fileName });
 
     }
 

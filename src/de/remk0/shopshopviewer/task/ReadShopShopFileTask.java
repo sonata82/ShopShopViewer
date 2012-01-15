@@ -44,7 +44,12 @@ import de.remk0.shopshopviewer.ShopShopViewerApplication;
  */
 public class ReadShopShopFileTask extends AsyncTask<Object, Integer, Boolean> {
 
+    private String fileName;
     private List<HashMap<String, Object>> rows;
+
+    public String getFileName() {
+        return fileName;
+    }
 
     public List<HashMap<String, Object>> getRows() {
         return rows;
@@ -53,7 +58,10 @@ public class ReadShopShopFileTask extends AsyncTask<Object, Integer, Boolean> {
     @Override
     protected final Boolean doInBackground(Object... params) {
 
-        File f = new File((File) params[0], (String) params[1]);
+        fileName = (String) params[1];
+
+        File f = new File((File) params[0],
+                fileName.concat(ShopShopViewerApplication.SHOPSHOP_EXTENSION));
 
         try {
             NSDictionary rootDict = (NSDictionary) PropertyListParser.parse(f);
