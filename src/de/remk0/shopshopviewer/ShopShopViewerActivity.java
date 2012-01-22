@@ -188,8 +188,9 @@ public class ShopShopViewerActivity extends ListActivity {
         super.onListItemClick(l, v, position, id);
 
         String e = (String) this.getListAdapter().getItem(position);
-        this.application.setCurrentFile(e);
-        startActivity(new Intent(this, DisplayFileActivity.class));
+        Intent intent = new Intent(this, DisplayFileActivity.class);
+        intent.putExtra(this.getPackageName() + ".fileName", e);
+        startActivity(intent);
     }
 
     @Override

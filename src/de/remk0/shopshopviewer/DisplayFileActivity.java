@@ -19,20 +19,26 @@
  */
 package de.remk0.shopshopviewer;
 
-import java.util.HashMap;
-import java.util.List;
+import java.io.File;
+import java.io.IOException;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
-import android.widget.CheckBox;
+import android.widget.BaseAdapter;
 import android.widget.ListView;
-import android.widget.SimpleAdapter;
-import android.widget.SimpleAdapter.ViewBinder;
+
+import com.dd.plist.NSDictionary;
+import com.dd.plist.NSNumber;
+import com.dd.plist.NSObject;
+import com.dd.plist.PropertyListParser;
+
 import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
 import de.remk0.shopshopviewer.task.ReadShopShopFileTask;
 
@@ -46,8 +52,11 @@ public class DisplayFileActivity extends ListActivity {
 
     private static final int DIALOG_READ_ERROR = 0;
     private static final int DIALOG_PROGRESS_READ = 1;
+    private static final int DIALOG_PROGRESS_WRITE = 2;
     private ShopShopViewerApplication application;
     private ProgressDialog progressDialog;
+    private String fileName;
+    private NSDictionary root;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,19 +64,14 @@ public class DisplayFileActivity extends ListActivity {
 
         this.application = (ShopShopViewerApplication) getApplicationContext();
         this.application.setAppState(AppState.DISPLAY);
-    }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        String fileName = this.application.getCurrentFile();
+        fileName = getIntent().getExtras().getString(
+                this.getPackageName() + ".fileName");
         this.setTitle(fileName);
 
         showDialog(DIALOG_PROGRESS_READ);
         new MyReadShopShopFile().execute(new Object[] {
                 getExternalFilesDir(null), fileName });
-
     }
 
     class MyReadShopShopFile extends ReadShopShopFileTask {
@@ -82,53 +86,32 @@ public class DisplayFileActivity extends ListActivity {
         protected void onPostExecute(Boolean result) {
             if (result) {
                 dismissDialog(DIALOG_PROGRESS_READ);
-                showFile(getRows());
+                root = rootDict;
+                showFile(shoppingList);
             } else {
                 showDialog(DIALOG_READ_ERROR);
             }
         }
     }
 
-    private void showFile(List<HashMap<String, Object>> rows) {
-        CheckableSimpleAdapter adapter = new CheckableSimpleAdapter(
-                DisplayFileActivity.this, rows, R.layout.file_row,
-                new String[] { "done", "name", "count" }, new int[] {
-                        R.id.done, R.id.name, R.id.count });
-        adapter.setViewBinder(new ShopShopListBinder());
+    private void showFile(NSObject[] list) {
+        CheckableArrayAdapter<NSObject> adapter = new CheckableArrayAdapter<NSObject>(
+                DisplayFileActivity.this, R.layout.file_row, R.id.name, list);
         setListAdapter(adapter);
-    }
-
-    class ShopShopListBinder implements ViewBinder {
-
-        @Override
-        public boolean setViewValue(View view, final Object data,
-                String textRepresentation) {
-            if (view instanceof CheckBox) {
-                CheckBox cb = (CheckBox) view;
-                if ("1".equals(textRepresentation)) {
-                    cb.setChecked(true);
-                } else {
-                    cb.setChecked(false);
-                }
-                return true;
-            }
-            return false;
-        }
-
     }
 
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
 
-        HashMap<String, Object> map = (HashMap<String, Object>) this
-                .getListView().getItemAtPosition(position);
-        if ((Integer) map.get("done") == 0) {
-            map.put("done", 1);
+        NSDictionary item = (NSDictionary) this.getListView()
+                .getItemAtPosition(position);
+        if (((NSNumber) item.objectForKey("done")).boolValue()) {
+            item.put("done", 0);
         } else {
-            map.put("done", 0);
+            item.put("done", 1);
         }
-        SimpleAdapter adapter = (SimpleAdapter) l.getAdapter();
+        BaseAdapter adapter = (BaseAdapter) l.getAdapter();
         adapter.notifyDataSetChanged();
     }
 
@@ -150,12 +133,55 @@ public class DisplayFileActivity extends ListActivity {
                             });
             return builder.create();
         case DIALOG_PROGRESS_READ:
-            progressDialog = new ProgressDialog(DisplayFileActivity.this);
-            progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            progressDialog = new ProgressDialog(this);
+            progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
             progressDialog.setMessage("Reading...");
+            return progressDialog;
+        case DIALOG_PROGRESS_WRITE:
+            progressDialog = new ProgressDialog(this);
+            progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            progressDialog.setMessage("Writing...");
             return progressDialog;
         default:
             return null;
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        showDialog(DIALOG_PROGRESS_WRITE);
+        new MyWriteShopShopFileTask().execute(new Object[] {
+                getExternalFilesDir(null), fileName });
+    }
+
+    class MyWriteShopShopFileTask extends AsyncTask<Object, Integer, Boolean> {
+
+        @Override
+        protected Boolean doInBackground(Object... params) {
+            fileName = (String) params[1];
+
+            File f = new File(
+                    (File) params[0],
+                    fileName.concat(ShopShopViewerApplication.SHOPSHOP_EXTENSION));
+
+            try {
+                PropertyListParser.saveAsXML(root, f);
+
+                return true;
+            } catch (IOException e) {
+                Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
+            }
+            return false;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean result) {
+            // TODO: why does this line cause IllegalArgumentExceptions?
+            // dismissDialog(DIALOG_PROGRESS_WRITE);
+
+            super.onPostExecute(result);
         }
     }
 }

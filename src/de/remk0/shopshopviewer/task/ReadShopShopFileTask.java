@@ -20,7 +20,6 @@
 package de.remk0.shopshopviewer.task;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -29,9 +28,7 @@ import android.util.Log;
 
 import com.dd.plist.NSArray;
 import com.dd.plist.NSDictionary;
-import com.dd.plist.NSNumber;
 import com.dd.plist.NSObject;
-import com.dd.plist.NSString;
 import com.dd.plist.PropertyListParser;
 
 import de.remk0.shopshopviewer.ShopShopViewerApplication;
@@ -46,6 +43,8 @@ public class ReadShopShopFileTask extends AsyncTask<Object, Integer, Boolean> {
 
     private String fileName;
     private List<HashMap<String, Object>> rows;
+    protected NSObject[] shoppingList;
+    protected NSDictionary rootDict;
 
     public String getFileName() {
         return fileName;
@@ -64,7 +63,7 @@ public class ReadShopShopFileTask extends AsyncTask<Object, Integer, Boolean> {
                 fileName.concat(ShopShopViewerApplication.SHOPSHOP_EXTENSION));
 
         try {
-            NSDictionary rootDict = (NSDictionary) PropertyListParser.parse(f);
+            rootDict = (NSDictionary) PropertyListParser.parse(f);
             NSObject[] colors = ((NSArray) rootDict.objectForKey("color"))
                     .getArray();
 
@@ -72,27 +71,8 @@ public class ReadShopShopFileTask extends AsyncTask<Object, Integer, Boolean> {
                 Log.d(ShopShopViewerApplication.APP_NAME, c.toString());
             }
 
-            NSObject[] shoppingList = ((NSArray) rootDict
-                    .objectForKey("shoppingList")).getArray();
-
-            rows = new ArrayList<HashMap<String, Object>>();
-            int j = 0, k = shoppingList.length;
-
-            for (NSObject item : shoppingList) {
-                NSDictionary i = (NSDictionary) item;
-                NSString name = (NSString) i.objectForKey("name");
-                NSNumber done = (NSNumber) i.objectForKey("done");
-                NSString count = (NSString) i.objectForKey("count");
-
-                HashMap<String, Object> row = new HashMap<String, Object>();
-                row.put("name", name.toString());
-                row.put("done", done.intValue());
-                row.put("count", count.toString());
-
-                rows.add(row);
-                publishProgress(++j, k);
-            }
-
+            shoppingList = ((NSArray) rootDict.objectForKey("shoppingList"))
+                    .getArray();
             return true;
         } catch (Exception e) {
             Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
