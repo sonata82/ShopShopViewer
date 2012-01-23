@@ -25,6 +25,7 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -33,7 +34,9 @@ import com.dd.plist.NSNumber;
 import com.dd.plist.NSString;
 
 /**
- * 
+ * Custom {@link ArrayAdapter} for displaying data from a {@link NSDictionary}
+ * object into a {@link LinearLayout} with a checkbox. Clicking the checkbox
+ * performs the ListItemClick event on the {@link ListView}.
  * 
  * @author Remko Plantenga
  * 
