@@ -19,17 +19,12 @@
  */
 package de.remk0.shopshopviewer;
 
-import java.io.File;
-import java.io.IOException;
-
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
@@ -37,10 +32,10 @@ import android.widget.ListView;
 import com.dd.plist.NSDictionary;
 import com.dd.plist.NSNumber;
 import com.dd.plist.NSObject;
-import com.dd.plist.PropertyListParser;
 
 import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
 import de.remk0.shopshopviewer.task.ReadShopShopFileTask;
+import de.remk0.shopshopviewer.task.WriteShopShopFileTask;
 
 /**
  * Activity that displays a shopping list.
@@ -156,24 +151,12 @@ public class DisplayFileActivity extends ListActivity {
                 getExternalFilesDir(null), fileName });
     }
 
-    class MyWriteShopShopFileTask extends AsyncTask<Object, Integer, Boolean> {
-
+    class MyWriteShopShopFileTask extends WriteShopShopFileTask {
         @Override
-        protected Boolean doInBackground(Object... params) {
-            fileName = (String) params[1];
+        protected void onPreExecute() {
+            super.onPreExecute();
 
-            File f = new File(
-                    (File) params[0],
-                    fileName.concat(ShopShopViewerApplication.SHOPSHOP_EXTENSION));
-
-            try {
-                PropertyListParser.saveAsXML(root, f);
-
-                return true;
-            } catch (IOException e) {
-                Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
-            }
-            return false;
+            rootDict = root;
         }
 
         @Override

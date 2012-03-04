@@ -2,6 +2,8 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="gen"/>
+	<classpathentry kind="src" path="tests/src"/>
+	<classpathentry kind="src" path="tests/gen"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry kind="lib" path="lib/dropbox-android-sdk-1.2.2.jar" sourcepath="lib/dropbox-android-sdk-1.2.2.zip"/>
 	<classpathentry kind="lib" path="lib/httpmime-4.0.3.jar"/>
@@ -11,5 +13,6 @@
 			<attribute name="javadoc_location" value="jar:platform:/resource/ShopShopViewer/lib/dd-plist-r55.zip!/javadoc"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="lib/robotium-solo-3.1.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

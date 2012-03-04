@@ -2,4 +2,5 @@
 <resources>
     <string name="hello">Hello World, ShopShopViewerActivity!</string>
     <string name="app_name">ShopShopViewer</string>
+    <string name="synchronize">Synchronize</string>
 </resources>
