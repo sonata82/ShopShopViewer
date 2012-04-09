@@ -19,9 +19,12 @@
  */
 package de.remk0.shopshopviewer;
 
+import android.app.Activity;
 import android.test.ActivityInstrumentationTestCase2;
 
 import com.jayway.android.robotium.solo.Solo;
+
+import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
 
 /**
  * @author Remko Plantenga
@@ -46,9 +49,18 @@ public class ShopShopViewerActivityTest extends
         solo.finishOpenedActivities();
     }
 
-    public void testBla() {
-        int a = 3;
-        assertEquals(3, a);
+    public void testStartSynchronizing() {
+        String synchronize = getActivity().getResources().getString(
+                R.string.synchronize);
+        solo.clickOnMenuItem(synchronize);
+        Activity currentActivity = solo.getCurrentActivity();
+        assertNotNull(currentActivity);
+        assertEquals("com.dropbox.client2.android.AuthActivity",
+                currentActivity.getComponentName().getClassName());
+        ShopShopViewerApplication applicationContext = (ShopShopViewerApplication) currentActivity
+                .getApplicationContext();
+        assertEquals(AppState.SWITCH_TO_DROPBOX,
+                applicationContext.getAppState());
     }
 
 }
