@@ -5,7 +5,5 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/ShopShopViewer"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
-	<classpathentry kind="lib" path="/ShopShopViewer/libs/robotium-solo-3.1.jar"/>
-	<classpathentry kind="lib" path="/ShopShopViewer/libs/easymock-3.1.jar"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

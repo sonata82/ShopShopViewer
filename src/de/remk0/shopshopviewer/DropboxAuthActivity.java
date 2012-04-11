@@ -74,7 +74,7 @@ public class DropboxAuthActivity extends Activity {
     protected void onResume() {
         super.onResume();
 
-        if (mDBApi.getSession().authenticationSuccessful()) {
+        if (mDBApi != null && mDBApi.getSession().authenticationSuccessful()) {
             try {
                 // MANDATORY call to complete auth.
                 // Sets the access token on the session

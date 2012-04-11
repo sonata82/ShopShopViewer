@@ -42,6 +42,8 @@ import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
 
 import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
+import de.remk0.shopshopviewer.io.DropboxFileAccess;
+import de.remk0.shopshopviewer.io.ExternalFilesDirFileAccess;
 import de.remk0.shopshopviewer.task.DropboxSynchronizeTask;
 
 /**
@@ -154,12 +156,13 @@ public class ShopShopViewerActivity extends ListActivity {
 
         @Override
         protected void onPreExecute() {
-            setmDBApi(mDBApi);
+            setRemoteFileAccess(new DropboxFileAccess(mDBApi));
             SharedPreferences prefs = getSharedPreferences(REVISIONS_STORE,
                     MODE_PRIVATE);
             setRevisionsStore(prefs.getAll());
             setRevisionsEditor(prefs.edit());
-            setExternalFilesDir(getExternalFilesDir(null));
+            setFileAccess(new ExternalFilesDirFileAccess(
+                    ShopShopViewerActivity.this));
             setHash(hash);
         }
 
