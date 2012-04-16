@@ -83,8 +83,8 @@ public class DisplayFileActivity extends ListActivity {
         protected void onPostExecute(Boolean result) {
             if (result) {
                 dismissDialog(DIALOG_PROGRESS_READ);
-                root = rootDict;
-                showFile(shoppingList);
+                root = getRoot();
+                showFile(getShoppingList());
             } else {
                 showDialog(DIALOG_READ_ERROR);
             }

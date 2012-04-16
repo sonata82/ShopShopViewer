@@ -26,13 +26,13 @@ import java.util.List;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import com.dd.plist.NSArray;
 import com.dd.plist.NSDictionary;
 import com.dd.plist.NSObject;
-import com.dd.plist.PropertyListParser;
 
 import de.remk0.shopshopviewer.ShopShopViewerApplication;
 import de.remk0.shopshopviewer.io.FileAccess;
+import de.remk0.shopshopviewer.parse.ShopShopFileParser;
+import de.remk0.shopshopviewer.parse.ShopShopFileParserException;
 
 /**
  * Task to read a ShopShop file.
@@ -44,9 +44,8 @@ public class ReadShopShopFileTask extends AsyncTask<String, Integer, Boolean> {
 
     private String fileName;
     private List<HashMap<String, Object>> rows;
-    protected NSObject[] shoppingList;
-    protected NSDictionary rootDict;
     private FileAccess fileAccess;
+    private ShopShopFileParser parser;
 
     public String getFileName() {
         return fileName;
@@ -60,6 +59,14 @@ public class ReadShopShopFileTask extends AsyncTask<String, Integer, Boolean> {
         this.fileAccess = fileAccess;
     }
 
+    public NSDictionary getRoot() {
+        return parser.getRoot();
+    }
+
+    public NSObject[] getShoppingList() {
+        return parser.getShoppingList();
+    }
+
     @Override
     protected final Boolean doInBackground(String... params) {
 
@@ -69,18 +76,9 @@ public class ReadShopShopFileTask extends AsyncTask<String, Integer, Boolean> {
                 .concat(ShopShopViewerApplication.SHOPSHOP_EXTENSION));
 
         try {
-            rootDict = (NSDictionary) PropertyListParser.parse(f);
-            NSObject[] colors = ((NSArray) rootDict.objectForKey("color"))
-                    .getArray();
-
-            for (NSObject c : colors) {
-                Log.d(ShopShopViewerApplication.APP_NAME, c.toString());
-            }
-
-            shoppingList = ((NSArray) rootDict.objectForKey("shoppingList"))
-                    .getArray();
+            parser.read(f);
             return true;
-        } catch (Exception e) {
+        } catch (ShopShopFileParserException e) {
             Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
         }
         return false;
