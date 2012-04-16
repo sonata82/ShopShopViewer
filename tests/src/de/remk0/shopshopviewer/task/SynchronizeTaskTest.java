@@ -24,10 +24,10 @@ import de.remk0.shopshopviewer.io.RemoteFileAccess;
  * @author Remko Plantenga
  * 
  */
-public class DropboxSynchronizeTaskTest extends TestCase {
+public class SynchronizeTaskTest extends TestCase {
 
     public void testExecute() throws Exception {
-        DropboxSynchronizeTask task = new DropboxSynchronizeTask();
+        SynchronizeTask task = new SynchronizeTask();
         FileAccess fileAccess = EasyMock.createMock(FileAccess.class);
         OutputStream out = new ByteArrayOutputStream();
         BufferedOutputStream buffer = new BufferedOutputStream(out);

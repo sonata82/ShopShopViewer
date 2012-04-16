@@ -37,12 +37,12 @@ import de.remk0.shopshopviewer.io.RemoteFileAccess;
 import de.remk0.shopshopviewer.io.RemoteFileAccessException;
 
 /**
- * Task that synchronizes with Dropbox.
+ * Task that synchronizes a remote location with files on the device.
  * 
  * @author Remko Plantenga
  * 
  */
-public class DropboxSynchronizeTask extends AsyncTask<Void, Integer, Boolean> {
+public class SynchronizeTask extends AsyncTask<Void, Integer, Boolean> {
 
     private String hash;
     private Map<String, ?> revisionsStore;

@@ -44,7 +44,7 @@ import com.dropbox.client2.android.AndroidAuthSession;
 import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
 import de.remk0.shopshopviewer.io.DropboxFileAccess;
 import de.remk0.shopshopviewer.io.ExternalFilesDirFileAccess;
-import de.remk0.shopshopviewer.task.DropboxSynchronizeTask;
+import de.remk0.shopshopviewer.task.SynchronizeTask;
 
 /**
  * The main activity that shows a list of files and allows the user to
@@ -152,7 +152,7 @@ public class ShopShopViewerActivity extends ListActivity {
         application.setAppState(AppState.WAITING);
     }
 
-    private class MyDropboxSynchronizeTask extends DropboxSynchronizeTask {
+    private class MyDropboxSynchronizeTask extends SynchronizeTask {
 
         @Override
         protected void onPreExecute() {
