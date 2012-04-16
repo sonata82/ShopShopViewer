@@ -51,4 +51,9 @@ public class ExternalFilesDirFileAccess implements FileAccess {
         }
     }
 
+    @Override
+    public File getFile(String filename) {
+        return new File(this.externalFilesDir, filename);
+    }
+
 }

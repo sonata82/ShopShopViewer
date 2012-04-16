@@ -20,6 +20,7 @@
 package de.remk0.shopshopviewer.io;
 
 import java.io.BufferedOutputStream;
+import java.io.File;
 
 /**
  * Interface for accessing files on the device.
@@ -31,5 +32,7 @@ public interface FileAccess {
 
     public abstract BufferedOutputStream openFile(String filename)
             throws FileAccessException;
+
+    public abstract File getFile(String filename);
 
 }

@@ -32,6 +32,7 @@ import com.dd.plist.NSObject;
 import com.dd.plist.PropertyListParser;
 
 import de.remk0.shopshopviewer.ShopShopViewerApplication;
+import de.remk0.shopshopviewer.io.FileAccess;
 
 /**
  * Task to read a ShopShop file.
@@ -39,12 +40,13 @@ import de.remk0.shopshopviewer.ShopShopViewerApplication;
  * @author Remko Plantenga
  * 
  */
-public class ReadShopShopFileTask extends AsyncTask<Object, Integer, Boolean> {
+public class ReadShopShopFileTask extends AsyncTask<String, Integer, Boolean> {
 
     private String fileName;
     private List<HashMap<String, Object>> rows;
     protected NSObject[] shoppingList;
     protected NSDictionary rootDict;
+    private FileAccess fileAccess;
 
     public String getFileName() {
         return fileName;
@@ -54,13 +56,17 @@ public class ReadShopShopFileTask extends AsyncTask<Object, Integer, Boolean> {
         return rows;
     }
 
+    public void setFileAccess(FileAccess fileAccess) {
+        this.fileAccess = fileAccess;
+    }
+
     @Override
-    protected final Boolean doInBackground(Object... params) {
+    protected final Boolean doInBackground(String... params) {
 
-        fileName = (String) params[1];
+        fileName = params[0];
 
-        File f = new File((File) params[0],
-                fileName.concat(ShopShopViewerApplication.SHOPSHOP_EXTENSION));
+        File f = fileAccess.getFile(fileName
+                .concat(ShopShopViewerApplication.SHOPSHOP_EXTENSION));
 
         try {
             rootDict = (NSDictionary) PropertyListParser.parse(f);
