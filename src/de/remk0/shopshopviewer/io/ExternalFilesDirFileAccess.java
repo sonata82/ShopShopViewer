@@ -21,8 +21,10 @@ package de.remk0.shopshopviewer.io;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 
 import android.content.Context;
 
@@ -52,8 +54,13 @@ public class ExternalFilesDirFileAccess implements FileAccess {
     }
 
     @Override
-    public File getFile(String filename) {
-        return new File(this.externalFilesDir, filename);
+    public InputStream getFile(String filename) throws FileAccessException {
+        File f = new File(this.externalFilesDir, filename);
+        try {
+            return new FileInputStream(f);
+        } catch (FileNotFoundException e) {
+            throw new FileAccessException(e);
+        }
     }
 
 }

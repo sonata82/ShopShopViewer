@@ -19,7 +19,7 @@
  */
 package de.remk0.shopshopviewer.parse;
 
-import java.io.File;
+import java.io.InputStream;
 
 import android.util.Log;
 
@@ -31,7 +31,8 @@ import com.dd.plist.PropertyListParser;
 import de.remk0.shopshopviewer.ShopShopViewerApplication;
 
 /**
- * Parses ShopShop files using plist (http://code.google.com/p/plist/).
+ * Parses ShopShop files using <a
+ * href="http://code.google.com/p/plist/">plist</a>.
  * 
  * @author Remko Plantenga
  * 
@@ -42,9 +43,9 @@ public class PlistParser implements ShopShopFileParser {
     private NSObject[] shoppingList;
 
     @Override
-    public boolean read(File f) throws ShopShopFileParserException {
+    public boolean read(InputStream is) throws ShopShopFileParserException {
         try {
-            root = (NSDictionary) PropertyListParser.parse(f);
+            root = (NSDictionary) PropertyListParser.parse(is);
 
             NSObject[] colors = ((NSArray) root.objectForKey("color"))
                     .getArray();

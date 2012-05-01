@@ -19,9 +19,7 @@
  */
 package de.remk0.shopshopviewer.task;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.List;
+import java.io.InputStream;
 
 import android.os.AsyncTask;
 import android.util.Log;
@@ -31,6 +29,7 @@ import com.dd.plist.NSObject;
 
 import de.remk0.shopshopviewer.ShopShopViewerApplication;
 import de.remk0.shopshopviewer.io.FileAccess;
+import de.remk0.shopshopviewer.io.FileAccessException;
 import de.remk0.shopshopviewer.parse.ShopShopFileParser;
 import de.remk0.shopshopviewer.parse.ShopShopFileParserException;
 
@@ -42,21 +41,15 @@ import de.remk0.shopshopviewer.parse.ShopShopFileParserException;
  */
 public class ReadShopShopFileTask extends AsyncTask<String, Integer, Boolean> {
 
-    private String fileName;
-    private List<HashMap<String, Object>> rows;
     private FileAccess fileAccess;
     private ShopShopFileParser parser;
 
-    public String getFileName() {
-        return fileName;
-    }
-
-    public List<HashMap<String, Object>> getRows() {
-        return rows;
-    }
-
     public void setFileAccess(FileAccess fileAccess) {
         this.fileAccess = fileAccess;
+    }
+
+    public void setParser(ShopShopFileParser parser) {
+        this.parser = parser;
     }
 
     public NSDictionary getRoot() {
@@ -70,14 +63,15 @@ public class ReadShopShopFileTask extends AsyncTask<String, Integer, Boolean> {
     @Override
     protected final Boolean doInBackground(String... params) {
 
-        fileName = params[0];
-
-        File f = fileAccess.getFile(fileName
-                .concat(ShopShopViewerApplication.SHOPSHOP_EXTENSION));
+        String fileName = params[0];
 
         try {
-            parser.read(f);
-            return true;
+            InputStream is = fileAccess.getFile(fileName
+                    .concat(ShopShopViewerApplication.SHOPSHOP_EXTENSION));
+
+            return parser.read(is);
+        } catch (FileAccessException e) {
+            Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
         } catch (ShopShopFileParserException e) {
             Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
         }

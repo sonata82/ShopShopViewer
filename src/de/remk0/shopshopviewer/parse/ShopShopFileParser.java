@@ -19,7 +19,7 @@
  */
 package de.remk0.shopshopviewer.parse;
 
-import java.io.File;
+import java.io.InputStream;
 
 import com.dd.plist.NSDictionary;
 import com.dd.plist.NSObject;
@@ -32,7 +32,8 @@ import com.dd.plist.NSObject;
  */
 public interface ShopShopFileParser {
 
-    public abstract boolean read(File f) throws ShopShopFileParserException;
+    public abstract boolean read(InputStream is)
+            throws ShopShopFileParserException;
 
     public abstract NSDictionary getRoot();
 
