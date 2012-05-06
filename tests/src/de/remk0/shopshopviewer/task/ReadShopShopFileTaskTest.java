@@ -23,18 +23,18 @@ import java.io.InputStream;
 
 import org.easymock.EasyMock;
 
-import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
-import android.content.res.Resources;
-import android.test.AndroidTestCase;
+import com.dd.plist.NSDictionary;
+import com.dd.plist.NSObject;
+
 import de.remk0.shopshopviewer.io.FileAccess;
 import de.remk0.shopshopviewer.parse.ShopShopFileParser;
+import de.remk0.test.AndroidTestCaseWithResources;
 
 /**
  * @author Remko Plantenga
  * 
  */
-public class ReadShopShopFileTaskTest extends AndroidTestCase {
+public class ReadShopShopFileTaskTest extends AndroidTestCaseWithResources {
 
     public void testExecute() throws Exception {
         ReadShopShopFileTask task = new ReadShopShopFileTask();
@@ -48,18 +48,19 @@ public class ReadShopShopFileTaskTest extends AndroidTestCase {
         ShopShopFileParser parser = EasyMock
                 .createMock(ShopShopFileParser.class);
         EasyMock.expect(parser.read(is)).andReturn(true);
+        NSDictionary root = new NSDictionary();
+        EasyMock.expect(parser.getRoot()).andReturn(root);
+        NSObject[] shoppingList = new NSObject[3];
+        EasyMock.expect(parser.getShoppingList()).andReturn(shoppingList);
         EasyMock.replay(parser);
         task.setParser(parser);
 
         task.execute(new String[] { "file1" });
 
         assertTrue(task.get());
-    }
 
-    protected Resources getResources(String packageName)
-            throws NameNotFoundException {
-        PackageManager pm = getContext().getPackageManager();
-        return pm.getResourcesForApplication(packageName);
+        assertEquals(root, task.getRoot());
+        assertEquals(shoppingList, task.getShoppingList());
     }
 
 }
