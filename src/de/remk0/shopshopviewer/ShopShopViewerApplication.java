@@ -25,6 +25,9 @@ import android.os.Environment;
 import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
 
+import de.remk0.shopshopviewer.io.ExternalFilesDirFileAccess;
+import de.remk0.shopshopviewer.io.FileAccess;
+
 /**
  * Object that holds global data and state of the application.
  * 
@@ -43,11 +46,12 @@ public class ShopShopViewerApplication extends Application {
     }
 
     private AppState appState;
-    private String currentFile;
     private DropboxAPI<AndroidAuthSession> dropboxAPI;
 
     private boolean externalStorageAvailable;
     private boolean externalStorageWriteable;
+
+    private FileAccess fileAccess;
 
     @Override
     public void onCreate() {
@@ -62,6 +66,8 @@ public class ShopShopViewerApplication extends Application {
 
     protected void initializeInstance() {
         this.checkExternalStorageAvailable();
+
+        this.fileAccess = new ExternalFilesDirFileAccess(this);
     }
 
     public AppState getAppState() {
@@ -70,14 +76,6 @@ public class ShopShopViewerApplication extends Application {
 
     public void setAppState(AppState appState) {
         this.appState = appState;
-    }
-
-    public void setCurrentFile(String s) {
-        this.currentFile = s;
-    }
-
-    public String getCurrentFile() {
-        return this.currentFile;
     }
 
     public void setDropboxAPI(DropboxAPI<AndroidAuthSession> mDBApi) {
@@ -112,6 +110,14 @@ public class ShopShopViewerApplication extends Application {
             // to know is we can neither read nor write
             externalStorageAvailable = externalStorageWriteable = false;
         }
+    }
+
+    public FileAccess getFileAccess() {
+        return this.fileAccess;
+    }
+
+    public void setFileAccess(FileAccess fileAccess) {
+        this.fileAccess = fileAccess;
     }
 
 }

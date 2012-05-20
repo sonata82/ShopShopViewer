@@ -34,7 +34,7 @@ import com.dd.plist.NSNumber;
 import com.dd.plist.NSObject;
 
 import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
-import de.remk0.shopshopviewer.io.ExternalFilesDirFileAccess;
+import de.remk0.shopshopviewer.parse.PlistParser;
 import de.remk0.shopshopviewer.task.ReadShopShopFileTask;
 import de.remk0.shopshopviewer.task.WriteShopShopFileTask;
 
@@ -67,7 +67,8 @@ public class DisplayFileActivity extends ListActivity {
 
         showDialog(DIALOG_PROGRESS_READ);
         MyReadShopShopFile readShopShopFile = new MyReadShopShopFile();
-        readShopShopFile.setFileAccess(new ExternalFilesDirFileAccess(this));
+        readShopShopFile.setFileAccess(application.getFileAccess());
+        readShopShopFile.setParser(new PlistParser());
         readShopShopFile.execute(new String[] { fileName });
     }
 
