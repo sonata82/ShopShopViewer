@@ -38,4 +38,6 @@ public interface ShopShopFileParser {
     public abstract NSDictionary getRoot();
 
     public abstract NSObject[] getShoppingList();
+
+    public abstract byte[] write() throws ShopShopFileParserException;
 }

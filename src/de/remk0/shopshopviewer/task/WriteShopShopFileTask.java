@@ -19,16 +19,16 @@
  */
 package de.remk0.shopshopviewer.task;
 
-import java.io.File;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 
 import android.os.AsyncTask;
 import android.util.Log;
-
-import com.dd.plist.NSDictionary;
-import com.dd.plist.PropertyListParser;
-
 import de.remk0.shopshopviewer.ShopShopViewerApplication;
+import de.remk0.shopshopviewer.io.FileAccess;
+import de.remk0.shopshopviewer.io.FileAccessException;
+import de.remk0.shopshopviewer.parse.ShopShopFileParser;
+import de.remk0.shopshopviewer.parse.ShopShopFileParserException;
 
 /**
  * Task to write a ShopShop file.
@@ -36,25 +36,47 @@ import de.remk0.shopshopviewer.ShopShopViewerApplication;
  * @author Remko Plantenga
  * 
  */
-public class WriteShopShopFileTask extends AsyncTask<Object, Integer, Boolean> {
+public class WriteShopShopFileTask extends AsyncTask<String, Integer, Boolean> {
     private String fileName;
-    protected NSDictionary rootDict;
+    private FileAccess fileAccess;
+    private ShopShopFileParser parser;
+
+    public void setFileAccess(FileAccess fileAccess) {
+        this.fileAccess = fileAccess;
+    }
+
+    public void setParser(ShopShopFileParser parser) {
+        this.parser = parser;
+    }
 
     @Override
-    protected Boolean doInBackground(Object... params) {
-        fileName = (String) params[1];
+    protected Boolean doInBackground(String... params) {
+        fileName = params[0];
 
-        File f = new File((File) params[0],
-                fileName.concat(ShopShopViewerApplication.SHOPSHOP_EXTENSION));
+        BufferedOutputStream out;
+        try {
+            out = fileAccess.openFile(fileName);
+        } catch (FileAccessException e) {
+            Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
+            return false;
+        }
 
         try {
-            PropertyListParser.saveAsXML(rootDict, f);
+
+            out.write(parser.write());
 
             return true;
+        } catch (ShopShopFileParserException e) {
+            Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
         } catch (IOException e) {
             Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
+        } finally {
+            try {
+                out.close();
+            } catch (IOException e) {
+                Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
+            }
         }
         return false;
     }
-
 }

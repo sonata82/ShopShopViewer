@@ -19,6 +19,8 @@
  */
 package de.remk0.shopshopviewer;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
 import org.easymock.EasyMock;
@@ -40,6 +42,7 @@ import de.remk0.test.ActivityInstrumentationTestCase2WithResources;
 public class DisplayFileActivityTest extends
         ActivityInstrumentationTestCase2WithResources<DisplayFileActivity> {
     private Solo solo;
+    private ByteArrayOutputStream out = new ByteArrayOutputStream();
 
     public DisplayFileActivityTest() {
         super("de.remk0.shopshopviewer", DisplayFileActivity.class);
@@ -54,6 +57,10 @@ public class DisplayFileActivityTest extends
         final InputStream is = getResources("de.remk0.shopshopviewer.test")
                 .openRawResource(de.remk0.shopshopviewer.test.R.raw.nederland2);
         EasyMock.expect(fileAccess.getFile("file1.shopshop")).andReturn(is);
+        BufferedOutputStream bufferedOut = new BufferedOutputStream(out);
+        // TODO why 2 times?
+        EasyMock.expect(fileAccess.openFile("file1")).andReturn(bufferedOut)
+                .times(2);
         EasyMock.replay(fileAccess);
         context.setFileAccess(fileAccess);
 
@@ -76,6 +83,15 @@ public class DisplayFileActivityTest extends
         ListAdapter currentListAdapter = ((ListActivity) solo
                 .getCurrentActivity()).getListAdapter();
         assertNotNull(currentListAdapter);
+
+        getInstrumentation().callActivityOnPause(getActivity());
+
+        getInstrumentation().callActivityOnResume(getActivity());
+
+        solo.waitForView(ListView.class);
+
+        // TODO assertEquals("1234", out.toString());
+
     }
 
 }

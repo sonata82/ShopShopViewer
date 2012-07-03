@@ -25,6 +25,7 @@ import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.BaseAdapter;
 import android.widget.ListView;
@@ -52,11 +53,14 @@ public class DisplayFileActivity extends ListActivity {
     private ShopShopViewerApplication application;
     private ProgressDialog progressDialog;
     private String fileName;
-    private NSDictionary root;
+    private boolean progressDialogVisible;
+    private PlistParser parser = new PlistParser();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Log.d(ShopShopViewerApplication.APP_NAME, "onCreate");
 
         this.application = (ShopShopViewerApplication) getApplicationContext();
         this.application.setAppState(AppState.DISPLAY);
@@ -68,7 +72,7 @@ public class DisplayFileActivity extends ListActivity {
         showDialog(DIALOG_PROGRESS_READ);
         MyReadShopShopFile readShopShopFile = new MyReadShopShopFile();
         readShopShopFile.setFileAccess(application.getFileAccess());
-        readShopShopFile.setParser(new PlistParser());
+        readShopShopFile.setParser(parser);
         readShopShopFile.execute(new String[] { fileName });
     }
 
@@ -84,7 +88,6 @@ public class DisplayFileActivity extends ListActivity {
         protected void onPostExecute(Boolean result) {
             if (result) {
                 dismissDialog(DIALOG_PROGRESS_READ);
-                root = getRoot();
                 showFile(getShoppingList());
             } else {
                 showDialog(DIALOG_READ_ERROR);
@@ -115,6 +118,7 @@ public class DisplayFileActivity extends ListActivity {
 
     @Override
     protected Dialog onCreateDialog(int id) {
+        Log.d(ShopShopViewerApplication.APP_NAME, "onCreateDialog");
         switch (id) {
         case DIALOG_READ_ERROR:
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -139,6 +143,7 @@ public class DisplayFileActivity extends ListActivity {
             progressDialog = new ProgressDialog(this);
             progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
             progressDialog.setMessage("Writing...");
+            progressDialogVisible = true;
             return progressDialog;
         default:
             return null;
@@ -147,27 +152,36 @@ public class DisplayFileActivity extends ListActivity {
 
     @Override
     protected void onPause() {
+        Log.d(ShopShopViewerApplication.APP_NAME, "onPause");
         super.onPause();
 
         showDialog(DIALOG_PROGRESS_WRITE);
-        new MyWriteShopShopFileTask().execute(new Object[] {
-                getExternalFilesDir(null), fileName });
+        MyWriteShopShopFileTask writeShopShopFileTask = new MyWriteShopShopFileTask();
+        writeShopShopFileTask.setParser(parser);
+        writeShopShopFileTask.setFileAccess(application.getFileAccess());
+        writeShopShopFileTask.execute(new String[] { fileName });
     }
 
     class MyWriteShopShopFileTask extends WriteShopShopFileTask {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            rootDict = root;
-        }
 
         @Override
         protected void onPostExecute(Boolean result) {
-            // TODO: why does this line cause IllegalArgumentExceptions?
-            // dismissDialog(DIALOG_PROGRESS_WRITE);
+            Log.d(ShopShopViewerApplication.APP_NAME,
+                    "MyWriteShopShopFileTask::onPostExecute");
 
             super.onPostExecute(result);
         }
     }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        if (progressDialogVisible) {
+            dismissDialog(DIALOG_PROGRESS_WRITE);
+            progressDialogVisible = false;
+        }
+
+    }
+
 }

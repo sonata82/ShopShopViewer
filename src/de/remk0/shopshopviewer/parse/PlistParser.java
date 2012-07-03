@@ -19,10 +19,12 @@
  */
 package de.remk0.shopshopviewer.parse;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 import android.util.Log;
 
+import com.dd.plist.BinaryPropertyListWriter;
 import com.dd.plist.NSArray;
 import com.dd.plist.NSDictionary;
 import com.dd.plist.NSObject;
@@ -45,6 +47,7 @@ public class PlistParser implements ShopShopFileParser {
     @Override
     public boolean read(InputStream is) throws ShopShopFileParserException {
         try {
+            // TODO inputstream is closed by PropertyListParser
             root = (NSDictionary) PropertyListParser.parse(is);
 
             NSObject[] colors = ((NSArray) root.objectForKey("color"))
@@ -71,5 +74,15 @@ public class PlistParser implements ShopShopFileParser {
     @Override
     public NSObject[] getShoppingList() {
         return shoppingList;
+    }
+
+    @Override
+    public byte[] write() throws ShopShopFileParserException {
+
+        try {
+            return BinaryPropertyListWriter.writeToArray(root);
+        } catch (IOException e) {
+            throw new ShopShopFileParserException(e);
+        }
     }
 }
