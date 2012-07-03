@@ -36,6 +36,7 @@ import android.content.Context;
  */
 public class ExternalFilesDirFileAccess implements FileAccess {
 
+    private static final int DEFAULT_BUFFER_SIZE = 8192;
     private File externalFilesDir;
 
     public ExternalFilesDirFileAccess(Context context) {
@@ -47,7 +48,7 @@ public class ExternalFilesDirFileAccess implements FileAccess {
             throws FileAccessException {
         try {
             return new BufferedOutputStream(new FileOutputStream(new File(
-                    externalFilesDir, filename)));
+                    externalFilesDir, filename)), DEFAULT_BUFFER_SIZE);
         } catch (FileNotFoundException e) {
             throw new FileAccessException(e);
         }
