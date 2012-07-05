@@ -42,7 +42,7 @@ public class ReadShopShopFileTaskTest extends AndroidTestCaseWithResources {
         FileAccess fileAccess = EasyMock.createMock(FileAccess.class);
         final InputStream is = getResources("de.remk0.shopshopviewer.test")
                 .openRawResource(de.remk0.shopshopviewer.test.R.raw.nederland2);
-        EasyMock.expect(fileAccess.getFile("file1.shopshop")).andReturn(is);
+        EasyMock.expect(fileAccess.getFile("file1")).andReturn(is);
         EasyMock.replay(fileAccess);
         task.setFileAccess(fileAccess);
         ShopShopFileParser parser = EasyMock

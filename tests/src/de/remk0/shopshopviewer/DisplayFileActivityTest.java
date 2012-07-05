@@ -56,7 +56,7 @@ public class DisplayFileActivityTest extends
         FileAccess fileAccess = EasyMock.createMock(FileAccess.class);
         final InputStream is = getResources("de.remk0.shopshopviewer.test")
                 .openRawResource(de.remk0.shopshopviewer.test.R.raw.nederland2);
-        EasyMock.expect(fileAccess.getFile("file1.shopshop")).andReturn(is);
+        EasyMock.expect(fileAccess.getFile("file1")).andReturn(is);
         BufferedOutputStream bufferedOut = new BufferedOutputStream(out);
         // TODO why 2 times?
         EasyMock.expect(fileAccess.openFile("file1")).andReturn(bufferedOut)

@@ -63,8 +63,7 @@ public class ReadShopShopFileTask extends AsyncTask<String, Integer, Boolean> {
     @Override
     protected final Boolean doInBackground(String... params) {
 
-        String fileName = params[0]
-                .concat(ShopShopViewerApplication.SHOPSHOP_EXTENSION);
+        String fileName = params[0];
 
         try {
             InputStream is = fileAccess.getFile(fileName);
