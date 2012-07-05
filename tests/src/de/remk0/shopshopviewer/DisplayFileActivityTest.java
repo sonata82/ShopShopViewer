@@ -89,9 +89,6 @@ public class DisplayFileActivityTest extends
         getInstrumentation().callActivityOnResume(getActivity());
 
         solo.waitForView(ListView.class);
-
-        // TODO assertEquals("1234", out.toString());
-
     }
 
 }

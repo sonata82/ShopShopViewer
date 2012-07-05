@@ -21,11 +21,11 @@ package de.remk0.shopshopviewer.parse;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 
+import com.dd.plist.NSArray;
 import com.dd.plist.NSDictionary;
 import com.dd.plist.NSObject;
+import com.dd.plist.PropertyListParser;
 
 import de.remk0.test.AndroidTestCaseWithResources;
 
@@ -36,18 +36,16 @@ import de.remk0.test.AndroidTestCaseWithResources;
 public class PlistParserTest extends AndroidTestCaseWithResources {
 
     private PlistParser parser;
-    private InputStream is;
 
     @Override
     protected void setUp() throws Exception {
         parser = new PlistParser();
-        is = getResources("de.remk0.shopshopviewer.test").openRawResource(
-                de.remk0.shopshopviewer.test.R.raw.nederland2);
+        InputStream is = getResources("de.remk0.shopshopviewer.test")
+                .openRawResource(de.remk0.shopshopviewer.test.R.raw.nederland2);
+        assertTrue(parser.read(is));
     }
 
-    public void testRead() throws Exception {
-        assertTrue(parser.read(is));
-
+    public void testRead() {
         NSDictionary root = parser.getRoot();
         assertNotNull(root);
 
@@ -62,42 +60,19 @@ public class PlistParserTest extends AndroidTestCaseWithResources {
     }
 
     public void testWrite() throws Exception {
-        assertTrue(parser.read(is));
-
-        // TODO reopen inputstream
-        is = getResources("de.remk0.shopshopviewer.test").openRawResource(
-                de.remk0.shopshopviewer.test.R.raw.nederland2);
 
         byte[] contentAsBytes = parser.write();
         ByteArrayInputStream written = new ByteArrayInputStream(contentAsBytes);
-        String contantAsString = new String(contentAsBytes);
-
-        //
-        final char[] buffer = new char[0x10000];
-        StringBuilder out = new StringBuilder();
-        Reader in = new InputStreamReader(is, "UTF-8");
-        try {
-            int read;
-            do {
-                read = in.read(buffer, 0, buffer.length);
-                if (read > 0) {
-                    out.append(buffer, 0, read);
-                }
-            } while (read >= 0);
-        } finally {
-            in.close();
-        }
-        String expectedAsString = out.toString();
-        //
 
         assertNotNull(written);
 
-        int expected;
-        int actual;
-        while (((expected = is.read()) != -1)
-                && ((actual = written.read()) != -1)) {
-            assertEquals(expected, actual);
-        }
+        NSDictionary root = (NSDictionary) PropertyListParser.parse(written);
 
+        assertEquals(2, root.count());
+
+        NSObject[] shoppingList = ((NSArray) root.objectForKey("shoppingList"))
+                .getArray();
+
+        assertEquals(14, shoppingList.length);
     }
 }
