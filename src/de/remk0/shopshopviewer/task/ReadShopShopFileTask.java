@@ -63,17 +63,19 @@ public class ReadShopShopFileTask extends AsyncTask<String, Integer, Boolean> {
     @Override
     protected final Boolean doInBackground(String... params) {
 
-        String fileName = params[0];
+        String fileName = params[0]
+                .concat(ShopShopViewerApplication.SHOPSHOP_EXTENSION);
 
         try {
-            InputStream is = fileAccess.getFile(fileName
-                    .concat(ShopShopViewerApplication.SHOPSHOP_EXTENSION));
+            InputStream is = fileAccess.getFile(fileName);
 
             return parser.read(is);
         } catch (FileAccessException e) {
-            Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
+            Log.e(ShopShopViewerApplication.APP_NAME, "Error while accessing "
+                    + fileName, e);
         } catch (ShopShopFileParserException e) {
-            Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
+            Log.e(ShopShopViewerApplication.APP_NAME, "Error while parsing "
+                    + fileName, e);
         }
         return false;
     }

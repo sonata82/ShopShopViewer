@@ -57,7 +57,8 @@ public class WriteShopShopFileTask extends AsyncTask<String, Integer, Boolean> {
         try {
             out = fileAccess.openFile(fileName);
         } catch (FileAccessException e) {
-            Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
+            Log.e(ShopShopViewerApplication.APP_NAME, "Error while opening "
+                    + fileName, e);
             return false;
         }
 
@@ -67,14 +68,17 @@ public class WriteShopShopFileTask extends AsyncTask<String, Integer, Boolean> {
 
             return true;
         } catch (ShopShopFileParserException e) {
-            Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
+            Log.e(ShopShopViewerApplication.APP_NAME, "Error while parsing "
+                    + fileName, e);
         } catch (IOException e) {
-            Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
+            Log.e(ShopShopViewerApplication.APP_NAME, "Error while reading "
+                    + fileName, e);
         } finally {
             try {
                 out.close();
             } catch (IOException e) {
-                Log.e(ShopShopViewerApplication.APP_NAME, e.toString());
+                Log.e(ShopShopViewerApplication.APP_NAME,
+                        "Error while closing " + fileName, e);
             }
         }
         return false;
