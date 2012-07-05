@@ -19,6 +19,8 @@
  */
 package de.remk0.shopshopviewer;
 
+import java.util.concurrent.ExecutionException;
+
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
@@ -53,7 +55,6 @@ public class DisplayFileActivity extends ListActivity {
     private ShopShopViewerApplication application;
     private ProgressDialog progressDialog;
     private String fileName;
-    private boolean progressDialogVisible;
     private PlistParser parser = new PlistParser();
 
     @Override
@@ -143,7 +144,6 @@ public class DisplayFileActivity extends ListActivity {
             progressDialog = new ProgressDialog(this);
             progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
             progressDialog.setMessage("Writing...");
-            progressDialogVisible = true;
             return progressDialog;
         default:
             return null;
@@ -160,6 +160,16 @@ public class DisplayFileActivity extends ListActivity {
         writeShopShopFileTask.setParser(parser);
         writeShopShopFileTask.setFileAccess(application.getFileAccess());
         writeShopShopFileTask.execute(new String[] { fileName });
+
+        try {
+            writeShopShopFileTask.get();
+        } catch (InterruptedException e) {
+            Log.e(ShopShopViewerApplication.APP_NAME,
+                    "Interrupted while writing ShopShop file", e);
+        } catch (ExecutionException e) {
+            Log.e(ShopShopViewerApplication.APP_NAME,
+                    "Exception while writing ShopShop file", e);
+        }
     }
 
     class MyWriteShopShopFileTask extends WriteShopShopFileTask {
@@ -170,18 +180,9 @@ public class DisplayFileActivity extends ListActivity {
                     "MyWriteShopShopFileTask::onPostExecute");
 
             super.onPostExecute(result);
-        }
-    }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        if (progressDialogVisible) {
             dismissDialog(DIALOG_PROGRESS_WRITE);
-            progressDialogVisible = false;
         }
-
     }
 
 }
