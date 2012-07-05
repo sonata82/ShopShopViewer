@@ -61,7 +61,12 @@ public class PlistParserTest extends AndroidTestCaseWithResources {
 
     public void testWrite() throws Exception {
 
+        NSObject[] shoppingList = parser.getShoppingList();
+        NSDictionary zahnpasta = (NSDictionary) shoppingList[0];
+        zahnpasta.put("done", 0);
+
         byte[] contentAsBytes = parser.write();
+
         ByteArrayInputStream written = new ByteArrayInputStream(contentAsBytes);
 
         assertNotNull(written);
@@ -70,9 +75,11 @@ public class PlistParserTest extends AndroidTestCaseWithResources {
 
         assertEquals(2, root.count());
 
-        NSObject[] shoppingList = ((NSArray) root.objectForKey("shoppingList"))
-                .getArray();
+        shoppingList = ((NSArray) root.objectForKey("shoppingList")).getArray();
 
         assertEquals(14, shoppingList.length);
+        assertEquals(false,
+                Boolean.parseBoolean((((NSDictionary) shoppingList[0])
+                        .objectForKey("done")).toString()));
     }
 }
