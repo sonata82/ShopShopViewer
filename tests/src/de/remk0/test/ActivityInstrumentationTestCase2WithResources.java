@@ -25,6 +25,9 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources;
 
 /**
+ * Extension of Androids base class for instrumentation test cases. Adds
+ * functionality to load resources from a known package.
+ * 
  * @author Remko Plantenga
  * 
  */

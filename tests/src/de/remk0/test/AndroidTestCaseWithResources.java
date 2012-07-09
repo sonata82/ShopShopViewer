@@ -25,6 +25,9 @@ import android.content.res.Resources;
 import android.test.AndroidTestCase;
 
 /**
+ * Extension of Androids base class for test cases. Adds functionality to load
+ * resources from a known package.
+ * 
  * @author Remko Plantenga
  * 
  */
