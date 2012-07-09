@@ -37,7 +37,6 @@ import com.dd.plist.NSNumber;
 import com.dd.plist.NSObject;
 
 import de.remk0.shopshopviewer.ShopShopViewerApplication.AppState;
-import de.remk0.shopshopviewer.parse.PlistParser;
 import de.remk0.shopshopviewer.task.ReadShopShopFileTask;
 import de.remk0.shopshopviewer.task.WriteShopShopFileTask;
 
@@ -55,7 +54,6 @@ public class DisplayFileActivity extends ListActivity {
     private ShopShopViewerApplication application;
     private ProgressDialog progressDialog;
     private String fileName;
-    private PlistParser parser = new PlistParser();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,7 +71,7 @@ public class DisplayFileActivity extends ListActivity {
         showDialog(DIALOG_PROGRESS_READ);
         MyReadShopShopFile readShopShopFile = new MyReadShopShopFile();
         readShopShopFile.setFileAccess(application.getFileAccess());
-        readShopShopFile.setParser(parser);
+        readShopShopFile.setParser(application.getShopShopFileParser());
         readShopShopFile.execute(new String[] { fileName });
     }
 
@@ -157,7 +155,7 @@ public class DisplayFileActivity extends ListActivity {
 
         showDialog(DIALOG_PROGRESS_WRITE);
         MyWriteShopShopFileTask writeShopShopFileTask = new MyWriteShopShopFileTask();
-        writeShopShopFileTask.setParser(parser);
+        writeShopShopFileTask.setParser(application.getShopShopFileParser());
         writeShopShopFileTask.setFileAccess(application.getFileAccess());
         writeShopShopFileTask.execute(new String[] { fileName });
 
@@ -170,6 +168,9 @@ public class DisplayFileActivity extends ListActivity {
             Log.e(ShopShopViewerApplication.APP_NAME,
                     "Exception while writing ShopShop file", e);
         }
+
+        dismissDialog(DIALOG_PROGRESS_WRITE);
+        Log.d(ShopShopViewerApplication.APP_NAME, "TEST");
     }
 
     class MyWriteShopShopFileTask extends WriteShopShopFileTask {
@@ -181,7 +182,7 @@ public class DisplayFileActivity extends ListActivity {
 
             super.onPostExecute(result);
 
-            dismissDialog(DIALOG_PROGRESS_WRITE);
+            // dismissDialog(DIALOG_PROGRESS_WRITE);
         }
     }
 

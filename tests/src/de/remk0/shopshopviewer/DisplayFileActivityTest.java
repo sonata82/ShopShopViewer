@@ -30,9 +30,14 @@ import android.content.Intent;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 
+import com.dd.plist.NSDictionary;
+import com.dd.plist.NSNumber;
+import com.dd.plist.NSObject;
+import com.dd.plist.NSString;
 import com.jayway.android.robotium.solo.Solo;
 
 import de.remk0.shopshopviewer.io.FileAccess;
+import de.remk0.shopshopviewer.parse.ShopShopFileParser;
 import de.remk0.test.ActivityInstrumentationTestCase2WithResources;
 
 /**
@@ -41,15 +46,20 @@ import de.remk0.test.ActivityInstrumentationTestCase2WithResources;
  */
 public class DisplayFileActivityTest extends
         ActivityInstrumentationTestCase2WithResources<DisplayFileActivity> {
-    private Solo solo;
-    private ByteArrayOutputStream out = new ByteArrayOutputStream();
+    Solo solo;
 
     public DisplayFileActivityTest() {
         super("de.remk0.shopshopviewer", DisplayFileActivity.class);
     }
 
     @Override
-    protected void setUp() throws Exception {
+    protected void tearDown() {
+        if (solo != null) {
+            solo.finishOpenedActivities();
+        }
+    }
+
+    public void testResume() throws Exception {
         ShopShopViewerApplication context = (ShopShopViewerApplication) this
                 .getInstrumentation().getTargetContext()
                 .getApplicationContext();
@@ -57,6 +67,7 @@ public class DisplayFileActivityTest extends
         final InputStream is = getResources("de.remk0.shopshopviewer.test")
                 .openRawResource(de.remk0.shopshopviewer.test.R.raw.nederland2);
         EasyMock.expect(fileAccess.getFile("file1")).andReturn(is);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
         BufferedOutputStream bufferedOut = new BufferedOutputStream(out);
         // TODO why 2 times?
         EasyMock.expect(fileAccess.openFile("file1")).andReturn(bufferedOut)
@@ -69,14 +80,6 @@ public class DisplayFileActivityTest extends
         setActivityIntent(intent);
 
         solo = new Solo(getInstrumentation(), getActivity());
-    }
-
-    @Override
-    protected void tearDown() {
-        solo.finishOpenedActivities();
-    }
-
-    public void testResume() {
 
         solo.waitForView(ListView.class);
 
@@ -87,6 +90,61 @@ public class DisplayFileActivityTest extends
         getInstrumentation().callActivityOnPause(getActivity());
 
         getInstrumentation().callActivityOnResume(getActivity());
+
+        solo.waitForView(ListView.class);
+    }
+
+    public void testRotate() throws Exception {
+        ShopShopViewerApplication context = (ShopShopViewerApplication) this
+                .getInstrumentation().getTargetContext()
+                .getApplicationContext();
+        FileAccess fileAccess = EasyMock.createMock(FileAccess.class);
+        final InputStream is = getResources("de.remk0.shopshopviewer.test")
+                .openRawResource(de.remk0.shopshopviewer.test.R.raw.nederland2);
+        EasyMock.expect(fileAccess.getFile("file1")).andReturn(is).times(2);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        BufferedOutputStream bufferedOut = new BufferedOutputStream(out);
+        EasyMock.expect(fileAccess.openFile("file1")).andReturn(bufferedOut)
+                .times(2);
+        EasyMock.replay(fileAccess);
+        context.setFileAccess(fileAccess);
+
+        ShopShopFileParser parser = EasyMock
+                .createMock(ShopShopFileParser.class);
+        EasyMock.expect(parser.read(is)).andReturn(true).times(2);
+        NSObject[] shoppingList = new NSObject[3];
+        NSDictionary item1 = new NSDictionary();
+        item1.put("name", new NSString("item1"));
+        item1.put("done", new NSNumber(0));
+        item1.put("count", new NSString("3"));
+        shoppingList[0] = item1;
+        NSDictionary item2 = new NSDictionary();
+        item2.put("name", new NSString("item2"));
+        item2.put("done", new NSNumber(0));
+        item2.put("count", new NSString("2"));
+        shoppingList[1] = item2;
+        NSDictionary item3 = new NSDictionary();
+        item3.put("name", new NSString("item3"));
+        item3.put("done", new NSNumber(0));
+        item3.put("count", new NSString("1"));
+        shoppingList[2] = item3;
+
+        EasyMock.expect(parser.getShoppingList()).andReturn(shoppingList)
+                .times(2);
+        byte[] bytes = new byte[8];
+        EasyMock.expect(parser.write()).andReturn(bytes).times(2);
+        EasyMock.replay(parser);
+        context.setShopShopFileParser(parser);
+
+        Intent intent = new Intent();
+        intent.putExtra("de.remk0.shopshopviewer.fileName", "file1");
+        setActivityIntent(intent);
+
+        solo = new Solo(getInstrumentation(), getActivity());
+
+        solo.waitForView(ListView.class);
+
+        solo.setActivityOrientation(Solo.LANDSCAPE);
 
         solo.waitForView(ListView.class);
     }
