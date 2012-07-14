@@ -27,6 +27,7 @@ import com.dropbox.client2.android.AndroidAuthSession;
 
 import de.remk0.shopshopviewer.io.ExternalFilesDirFileAccess;
 import de.remk0.shopshopviewer.io.FileAccess;
+import de.remk0.shopshopviewer.parse.PlistParser;
 import de.remk0.shopshopviewer.parse.ShopShopFileParser;
 
 /**
@@ -70,6 +71,7 @@ public class ShopShopViewerApplication extends Application {
         this.checkExternalStorageAvailable();
 
         this.fileAccess = new ExternalFilesDirFileAccess(this);
+        this.shopShopFileParser = new PlistParser();
     }
 
     public AppState getAppState() {

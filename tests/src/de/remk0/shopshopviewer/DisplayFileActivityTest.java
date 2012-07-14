@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
 import org.easymock.EasyMock;
+import org.easymock.IAnswer;
 
 import android.app.ListActivity;
 import android.content.Intent;
@@ -99,19 +100,25 @@ public class DisplayFileActivityTest extends
                 .getInstrumentation().getTargetContext()
                 .getApplicationContext();
         FileAccess fileAccess = EasyMock.createMock(FileAccess.class);
-        final InputStream is = getResources("de.remk0.shopshopviewer.test")
-                .openRawResource(de.remk0.shopshopviewer.test.R.raw.nederland2);
-        EasyMock.expect(fileAccess.getFile("file1")).andReturn(is).times(2);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        BufferedOutputStream bufferedOut = new BufferedOutputStream(out);
-        EasyMock.expect(fileAccess.openFile("file1")).andReturn(bufferedOut)
-                .times(2);
+        EasyMock.expect(fileAccess.getFile("file1")).andReturn(null).times(2);
+        EasyMock.expect(fileAccess.openFile("file1"))
+                .andAnswer(new IAnswer<BufferedOutputStream>() {
+                    @Override
+                    public BufferedOutputStream answer() throws Throwable {
+
+                        ByteArrayOutputStream out = new ByteArrayOutputStream();
+                        BufferedOutputStream bufferedOut = new BufferedOutputStream(
+                                out);
+                        return bufferedOut;
+                    }
+                }).times(2);
         EasyMock.replay(fileAccess);
         context.setFileAccess(fileAccess);
 
         ShopShopFileParser parser = EasyMock
                 .createMock(ShopShopFileParser.class);
-        EasyMock.expect(parser.read(is)).andReturn(true).times(2);
+        EasyMock.expect(parser.read(EasyMock.anyObject(InputStream.class)))
+                .andReturn(true).times(2);
         NSObject[] shoppingList = new NSObject[3];
         NSDictionary item1 = new NSDictionary();
         item1.put("name", new NSString("item1"));

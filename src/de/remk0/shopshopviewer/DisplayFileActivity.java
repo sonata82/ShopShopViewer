@@ -19,8 +19,6 @@
  */
 package de.remk0.shopshopviewer;
 
-import java.util.concurrent.ExecutionException;
-
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ListActivity;
@@ -48,6 +46,7 @@ import de.remk0.shopshopviewer.task.WriteShopShopFileTask;
  */
 public class DisplayFileActivity extends ListActivity {
 
+    private static final String LOG_TAG = ListActivity.class.getSimpleName();
     private static final int DIALOG_READ_ERROR = 0;
     private static final int DIALOG_PROGRESS_READ = 1;
     private static final int DIALOG_PROGRESS_WRITE = 2;
@@ -55,11 +54,14 @@ public class DisplayFileActivity extends ListActivity {
     private ProgressDialog progressDialog;
     private String fileName;
 
+    private MyWriteShopShopFileTask writeShopShopFileTask;
+    private boolean progressDialogShown;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Log.d(ShopShopViewerApplication.APP_NAME, "onCreate");
+        Log.d(LOG_TAG, "onCreate");
 
         this.application = (ShopShopViewerApplication) getApplicationContext();
         this.application.setAppState(AppState.DISPLAY);
@@ -68,11 +70,32 @@ public class DisplayFileActivity extends ListActivity {
                 this.getPackageName() + ".fileName");
         this.setTitle(fileName);
 
+        Object retained = getLastNonConfigurationInstance();
+        if (retained instanceof MyWriteShopShopFileTask) {
+            writeShopShopFileTask = (MyWriteShopShopFileTask) retained;
+            writeShopShopFileTask.setActivity(this);
+            // try {
+            // writeShopShopFileTask.get();
+            // } catch (InterruptedException e) {
+            // // TODO Auto-generated catch block
+            // e.printStackTrace();
+            // } catch (ExecutionException e) {
+            // // TODO Auto-generated catch block
+            // e.printStackTrace();
+            // }
+        }
+
         showDialog(DIALOG_PROGRESS_READ);
         MyReadShopShopFile readShopShopFile = new MyReadShopShopFile();
         readShopShopFile.setFileAccess(application.getFileAccess());
         readShopShopFile.setParser(application.getShopShopFileParser());
         readShopShopFile.execute(new String[] { fileName });
+    }
+
+    @Override
+    public Object onRetainNonConfigurationInstance() {
+        writeShopShopFileTask.setActivity(null);
+        return writeShopShopFileTask;
     }
 
     class MyReadShopShopFile extends ReadShopShopFileTask {
@@ -117,7 +140,7 @@ public class DisplayFileActivity extends ListActivity {
 
     @Override
     protected Dialog onCreateDialog(int id) {
-        Log.d(ShopShopViewerApplication.APP_NAME, "onCreateDialog");
+        Log.d(LOG_TAG, "onCreateDialog");
         switch (id) {
         case DIALOG_READ_ERROR:
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -142,6 +165,7 @@ public class DisplayFileActivity extends ListActivity {
             progressDialog = new ProgressDialog(this);
             progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
             progressDialog.setMessage("Writing...");
+            progressDialogShown = true;
             return progressDialog;
         default:
             return null;
@@ -150,39 +174,45 @@ public class DisplayFileActivity extends ListActivity {
 
     @Override
     protected void onPause() {
-        Log.d(ShopShopViewerApplication.APP_NAME, "onPause");
+        Log.d(LOG_TAG, "onPause");
         super.onPause();
 
         showDialog(DIALOG_PROGRESS_WRITE);
-        MyWriteShopShopFileTask writeShopShopFileTask = new MyWriteShopShopFileTask();
+        writeShopShopFileTask = new MyWriteShopShopFileTask(this);
         writeShopShopFileTask.setParser(application.getShopShopFileParser());
         writeShopShopFileTask.setFileAccess(application.getFileAccess());
         writeShopShopFileTask.execute(new String[] { fileName });
+    }
 
-        try {
-            writeShopShopFileTask.get();
-        } catch (InterruptedException e) {
-            Log.e(ShopShopViewerApplication.APP_NAME,
-                    "Interrupted while writing ShopShop file", e);
-        } catch (ExecutionException e) {
-            Log.e(ShopShopViewerApplication.APP_NAME,
-                    "Exception while writing ShopShop file", e);
+    public void onWriteShopShopFileTaskCompleted() {
+        if (progressDialogShown) {
+            dismissDialog(DIALOG_PROGRESS_WRITE);
         }
-
-        dismissDialog(DIALOG_PROGRESS_WRITE);
-        Log.d(ShopShopViewerApplication.APP_NAME, "TEST");
     }
 
     class MyWriteShopShopFileTask extends WriteShopShopFileTask {
 
+        private DisplayFileActivity activity;
+
+        public MyWriteShopShopFileTask(DisplayFileActivity displayFileActivity) {
+            super();
+
+            activity = displayFileActivity;
+        }
+
+        public void setActivity(DisplayFileActivity activity) {
+            this.activity = activity;
+        }
+
         @Override
         protected void onPostExecute(Boolean result) {
-            Log.d(ShopShopViewerApplication.APP_NAME,
-                    "MyWriteShopShopFileTask::onPostExecute");
+            Log.d(LOG_TAG, "MyWriteShopShopFileTask::onPostExecute");
 
             super.onPostExecute(result);
 
-            // dismissDialog(DIALOG_PROGRESS_WRITE);
+            if (null != activity) {
+                activity.onWriteShopShopFileTaskCompleted();
+            }
         }
     }
 
