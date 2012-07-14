@@ -24,6 +24,7 @@ import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -68,7 +69,11 @@ public class DisplayFileActivity extends ListActivity {
 
         fileName = getIntent().getExtras().getString(
                 this.getPackageName() + ".fileName");
-        this.setTitle(fileName);
+        if (fileName.lastIndexOf(".") != -1) {
+        	this.setTitle(fileName.substring(0, fileName.lastIndexOf(".")));
+        } else {
+        	this.setTitle(fileName);
+        }
 
         Object retained = getLastNonConfigurationInstance();
         if (retained instanceof MyWriteShopShopFileTask) {
@@ -183,10 +188,27 @@ public class DisplayFileActivity extends ListActivity {
         writeShopShopFileTask.setFileAccess(application.getFileAccess());
         writeShopShopFileTask.execute(new String[] { fileName });
     }
-
+    
+    @Override
+    protected void onRestart() {
+    	super.onRestart();
+    	
+    	if (progressDialogShown) {
+    		dismissDialog(DIALOG_PROGRESS_WRITE);
+    	}
+    }
+    
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+    	// TODO Auto-generated method stub
+    	super.onConfigurationChanged(newConfig);
+    	
+    	Log.d(LOG_TAG, "onConfigurationChanged");
+    }
+    
     public void onWriteShopShopFileTaskCompleted() {
         if (progressDialogShown) {
-            dismissDialog(DIALOG_PROGRESS_WRITE);
+            //dismissDialog(DIALOG_PROGRESS_WRITE);
         }
     }
 
