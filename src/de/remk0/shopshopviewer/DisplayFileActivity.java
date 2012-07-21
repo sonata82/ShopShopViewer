@@ -24,7 +24,6 @@ import android.app.Dialog;
 import android.app.ListActivity;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
-import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -50,13 +49,11 @@ public class DisplayFileActivity extends ListActivity {
     private static final String LOG_TAG = ListActivity.class.getSimpleName();
     private static final int DIALOG_READ_ERROR = 0;
     private static final int DIALOG_PROGRESS_READ = 1;
-    private static final int DIALOG_PROGRESS_WRITE = 2;
     private ShopShopViewerApplication application;
-    private ProgressDialog progressDialog;
+    private ProgressDialog progressDialogRead;
     private String fileName;
 
-    private MyWriteShopShopFileTask writeShopShopFileTask;
-    private boolean progressDialogShown;
+    private WriteShopShopFileTask writeShopShopFileTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,21 +72,6 @@ public class DisplayFileActivity extends ListActivity {
         	this.setTitle(fileName);
         }
 
-        Object retained = getLastNonConfigurationInstance();
-        if (retained instanceof MyWriteShopShopFileTask) {
-            writeShopShopFileTask = (MyWriteShopShopFileTask) retained;
-            writeShopShopFileTask.setActivity(this);
-            // try {
-            // writeShopShopFileTask.get();
-            // } catch (InterruptedException e) {
-            // // TODO Auto-generated catch block
-            // e.printStackTrace();
-            // } catch (ExecutionException e) {
-            // // TODO Auto-generated catch block
-            // e.printStackTrace();
-            // }
-        }
-
         showDialog(DIALOG_PROGRESS_READ);
         MyReadShopShopFile readShopShopFile = new MyReadShopShopFile();
         readShopShopFile.setFileAccess(application.getFileAccess());
@@ -97,18 +79,12 @@ public class DisplayFileActivity extends ListActivity {
         readShopShopFile.execute(new String[] { fileName });
     }
 
-    @Override
-    public Object onRetainNonConfigurationInstance() {
-        writeShopShopFileTask.setActivity(null);
-        return writeShopShopFileTask;
-    }
-
     class MyReadShopShopFile extends ReadShopShopFileTask {
         @Override
         protected void onProgressUpdate(Integer... values) {
             float count = values[0];
             float total = values[1];
-            progressDialog.setProgress((int) (count / total * 100));
+            progressDialogRead.setProgress((int) (count / total * 100));
         }
 
         @Override
@@ -162,16 +138,10 @@ public class DisplayFileActivity extends ListActivity {
                             });
             return builder.create();
         case DIALOG_PROGRESS_READ:
-            progressDialog = new ProgressDialog(this);
-            progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            progressDialog.setMessage("Reading...");
-            return progressDialog;
-        case DIALOG_PROGRESS_WRITE:
-            progressDialog = new ProgressDialog(this);
-            progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            progressDialog.setMessage("Writing...");
-            progressDialogShown = true;
-            return progressDialog;
+            progressDialogRead = new ProgressDialog(this);
+            progressDialogRead.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            progressDialogRead.setMessage("Reading...");
+            return progressDialogRead;
         default:
             return null;
         }
@@ -182,60 +152,10 @@ public class DisplayFileActivity extends ListActivity {
         Log.d(LOG_TAG, "onPause");
         super.onPause();
 
-        showDialog(DIALOG_PROGRESS_WRITE);
-        writeShopShopFileTask = new MyWriteShopShopFileTask(this);
+        writeShopShopFileTask = new WriteShopShopFileTask();
         writeShopShopFileTask.setParser(application.getShopShopFileParser());
         writeShopShopFileTask.setFileAccess(application.getFileAccess());
         writeShopShopFileTask.execute(new String[] { fileName });
     }
     
-    @Override
-    protected void onRestart() {
-    	super.onRestart();
-    	
-    	if (progressDialogShown) {
-    		dismissDialog(DIALOG_PROGRESS_WRITE);
-    	}
-    }
-    
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-    	// TODO Auto-generated method stub
-    	super.onConfigurationChanged(newConfig);
-    	
-    	Log.d(LOG_TAG, "onConfigurationChanged");
-    }
-    
-    public void onWriteShopShopFileTaskCompleted() {
-        if (progressDialogShown) {
-            //dismissDialog(DIALOG_PROGRESS_WRITE);
-        }
-    }
-
-    class MyWriteShopShopFileTask extends WriteShopShopFileTask {
-
-        private DisplayFileActivity activity;
-
-        public MyWriteShopShopFileTask(DisplayFileActivity displayFileActivity) {
-            super();
-
-            activity = displayFileActivity;
-        }
-
-        public void setActivity(DisplayFileActivity activity) {
-            this.activity = activity;
-        }
-
-        @Override
-        protected void onPostExecute(Boolean result) {
-            Log.d(LOG_TAG, "MyWriteShopShopFileTask::onPostExecute");
-
-            super.onPostExecute(result);
-
-            if (null != activity) {
-                activity.onWriteShopShopFileTaskCompleted();
-            }
-        }
-    }
-
 }
