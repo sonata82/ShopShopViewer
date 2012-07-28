@@ -38,6 +38,7 @@ import com.dd.plist.NSString;
 import com.jayway.android.robotium.solo.Solo;
 
 import de.remk0.shopshopviewer.io.FileAccess;
+import de.remk0.shopshopviewer.io.FileAccessException;
 import de.remk0.shopshopviewer.parse.ShopShopFileParser;
 import de.remk0.test.ActivityInstrumentationTestCase2WithResources;
 
@@ -64,17 +65,9 @@ public class DisplayFileActivityTest extends
         ShopShopViewerApplication context = (ShopShopViewerApplication) this
                 .getInstrumentation().getTargetContext()
                 .getApplicationContext();
-        FileAccess fileAccess = EasyMock.createMock(FileAccess.class);
         final InputStream is = getResources("de.remk0.shopshopviewer.test")
                 .openRawResource(de.remk0.shopshopviewer.test.R.raw.nederland2);
-        EasyMock.expect(fileAccess.getFile("file1")).andReturn(is);
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        BufferedOutputStream bufferedOut = new BufferedOutputStream(out);
-        // TODO why 2 times?
-        EasyMock.expect(fileAccess.openFile("file1")).andReturn(bufferedOut)
-                .times(2);
-        EasyMock.replay(fileAccess);
-        context.setFileAccess(fileAccess);
+        prepareContext(context, is);
 
         Intent intent = new Intent();
         intent.putExtra("de.remk0.shopshopviewer.fileName", "file1");
@@ -96,24 +89,10 @@ public class DisplayFileActivityTest extends
     }
 
     public void testRotate() throws Exception {
-        ShopShopViewerApplication context = (ShopShopViewerApplication) this
+    	ShopShopViewerApplication context = (ShopShopViewerApplication) this
                 .getInstrumentation().getTargetContext()
                 .getApplicationContext();
-        FileAccess fileAccess = EasyMock.createMock(FileAccess.class);
-        EasyMock.expect(fileAccess.getFile("file1")).andReturn(null).times(2);
-        EasyMock.expect(fileAccess.openFile("file1"))
-                .andAnswer(new IAnswer<BufferedOutputStream>() {
-                    @Override
-                    public BufferedOutputStream answer() throws Throwable {
-
-                        ByteArrayOutputStream out = new ByteArrayOutputStream();
-                        BufferedOutputStream bufferedOut = new BufferedOutputStream(
-                                out);
-                        return bufferedOut;
-                    }
-                }).times(2);
-        EasyMock.replay(fileAccess);
-        context.setFileAccess(fileAccess);
+    	prepareContext(context, null);
 
         ShopShopFileParser parser = EasyMock
                 .createMock(ShopShopFileParser.class);
@@ -155,5 +134,25 @@ public class DisplayFileActivityTest extends
 
         solo.waitForView(ListView.class);
     }
+
+	private void prepareContext(ShopShopViewerApplication context, InputStream is)
+			throws FileAccessException {
+		
+        FileAccess fileAccess = EasyMock.createMock(FileAccess.class);
+        EasyMock.expect(fileAccess.getFile("file1")).andReturn(is).times(2);
+        EasyMock.expect(fileAccess.openFile("file1"))
+                .andAnswer(new IAnswer<BufferedOutputStream>() {
+                    @Override
+                    public BufferedOutputStream answer() throws Throwable {
+
+                        ByteArrayOutputStream out = new ByteArrayOutputStream();
+                        BufferedOutputStream bufferedOut = new BufferedOutputStream(
+                                out);
+                        return bufferedOut;
+                    }
+                }).times(2);
+        EasyMock.replay(fileAccess);
+        context.setFileAccess(fileAccess);
+	}
 
 }
