@@ -1,0 +1,43 @@
+buildscript {
+  repositories {
+    mavenCentral()
+    maven {
+        url "file:///C:/Users/rplantenga/.m2/repository"
+    }
+  }
+  dependencies {
+    classpath 'org.gradle.api.plugins:gradle-android-plugin:1.2.0-SNAPSHOT'
+  }
+}
+
+apply plugin: 'android'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: '*.jar')
+}
+
+sourceSets {
+  main {
+    java {
+      srcDir 'src'
+    }
+  }
+}
+
+version = "1.0.0"
+
+processResources {
+  expand (project.properties)
+}
+
+task configureDebug << {
+  jar.classifier = "debug"
+}
+
+task configureRelease << {
+  proguard.enabled = true
+}
