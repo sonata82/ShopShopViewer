@@ -6,7 +6,7 @@ buildscript {
     }
   }
   dependencies {
-    classpath 'org.gradle.api.plugins:gradle-android-plugin:1.2.0-SNAPSHOT'
+    classpath group: 'org.gradle.api.plugins', name: 'gradle-android-plugin', version: '1.2.2-SNAPSHOT'
   }
 }
 
